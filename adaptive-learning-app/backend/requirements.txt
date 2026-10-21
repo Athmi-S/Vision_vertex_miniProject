@@ -1,0 +1,29 @@
+# Python dependencies for the VISION Adaptive Learning backend
+# Install with:  pip install -r requirements.txt
+
+# Web framework
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+
+# Data validation
+pydantic==2.11.4
+pydantic-settings==2.9.1
+email-validator==2.2.0
+
+# Database (ORM + SQLite driver is built into Python)
+sqlalchemy==2.0.41
+
+# Password hashing
+# bcrypt 4.x is required — passlib 1.7.4 is incompatible with bcrypt 5.x
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+
+# JWT tokens
+python-jose[cryptography]==3.5.0
+
+# Environment variables
+python-dotenv==1.1.1
+
+# Testing
+pytest==8.3.5
+httpx==0.28.1

@@ -1,0 +1,113 @@
+/*
+  TTSToolbar.css — Styles for the Text-to-Speech control bar.
+
+  Reuses design tokens from App.css.
+  The toolbar sits below the question / feedback content and uses
+  clearly labelled icon+text buttons so purpose is obvious without icons.
+*/
+
+/* -----------------------------------------------
+   Toolbar container
+   ----------------------------------------------- */
+.tts-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: #f7f8fa;
+  border: 1px solid var(--colour-border);
+  border-radius: 6px;
+}
+
+.tts-toolbar-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--colour-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.25rem;
+  white-space: nowrap;
+  /* Hidden visually on very small screens but always available to SR */
+}
+
+/* -----------------------------------------------
+   Individual TTS buttons
+   ----------------------------------------------- */
+.tts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-base);
+  padding: 0.4rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--colour-border);
+  background: var(--colour-bg);
+  color: var(--colour-text);
+  transition: background 0.12s ease, border-color 0.12s ease;
+  white-space: nowrap;
+  min-height: 36px; /* accessible tap target */
+}
+
+.tts-btn:hover {
+  background: var(--colour-surface);
+  border-color: var(--colour-primary);
+}
+
+.tts-btn:focus-visible {
+  outline: 3px solid var(--colour-focus);
+  outline-offset: 2px;
+}
+
+.tts-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Stop button — slightly different colour to distinguish clearly */
+.tts-btn-stop {
+  border-color: #c62828;
+  color: #c62828;
+}
+
+.tts-btn-stop:hover {
+  background: #ffebee;
+  border-color: #b71c1c;
+  color: #b71c1c;
+}
+
+/* Active / speaking indicator on read buttons */
+.tts-btn-active {
+  background: #e8edff;
+  border-color: var(--colour-primary);
+  color: var(--colour-primary);
+}
+
+/* -----------------------------------------------
+   Fallback notice (shown when browser voice
+   doesn't match the learner's language)
+   ----------------------------------------------- */
+.tts-fallback-notice {
+  font-size: 0.78rem;
+  color: var(--colour-muted);
+  font-style: italic;
+  margin-top: 0.35rem;
+  width: 100%;
+}
+
+/* -----------------------------------------------
+   Unsupported notice
+   ----------------------------------------------- */
+.tts-unsupported {
+  font-size: 0.82rem;
+  color: var(--colour-muted);
+  padding: 0.5rem 0.75rem;
+  background: #f7f8fa;
+  border: 1px solid var(--colour-border);
+  border-radius: 5px;
+  margin-top: 1rem;
+}

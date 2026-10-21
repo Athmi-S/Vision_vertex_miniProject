@@ -1,0 +1,222 @@
+/*
+  ResultsPage.css — Styles for the session results screen.
+  Reuses design tokens from App.css throughout.
+*/
+
+/* -----------------------------------------------
+   Page shell
+   ----------------------------------------------- */
+.results-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.results-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--colour-surface);
+}
+
+.results-main:focus {
+  outline: none;
+}
+
+/* -----------------------------------------------
+   Card
+   ----------------------------------------------- */
+.results-card {
+  max-width: 720px;
+  width: 100%;
+  background: var(--colour-bg);
+  border: 1px solid var(--colour-border);
+  border-radius: 8px;
+  padding: 2.5rem 2rem;
+}
+
+.results-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--colour-primary);
+  margin-bottom: 0.35rem;
+}
+
+.results-subtitle {
+  font-size: 0.95rem;
+  color: var(--colour-muted);
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+/* -----------------------------------------------
+   Overall score summary box
+   ----------------------------------------------- */
+.results-summary {
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.5rem;
+}
+
+@media (min-width: 480px) {
+  .results-summary {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.results-stat {
+  text-align: center;
+}
+
+.results-stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--colour-primary);
+  line-height: 1.1;
+  display: block;
+}
+
+.results-stat-label {
+  font-size: 0.8rem;
+  color: var(--colour-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
+  display: block;
+}
+
+/* -----------------------------------------------
+   Topic breakdown table
+   ----------------------------------------------- */
+.results-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--colour-text);
+  margin-bottom: 0.75rem;
+}
+
+.results-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+}
+
+.results-table th {
+  background: var(--colour-surface);
+  border-bottom: 2px solid var(--colour-border);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--colour-text);
+}
+
+.results-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--colour-border);
+  color: var(--colour-text);
+  vertical-align: middle;
+}
+
+.results-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Mastery bar inside a table cell */
+.mastery-bar-track {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.mastery-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--colour-primary);
+  transition: width 0.4s ease;
+}
+
+/* -----------------------------------------------
+   Error / loading banners
+   ----------------------------------------------- */
+.results-error-banner {
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  color: #8b0000;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.results-loading-text {
+  color: var(--colour-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* -----------------------------------------------
+   Action buttons
+   ----------------------------------------------- */
+.results-btn-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.results-btn-primary {
+  background-color: var(--colour-primary);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.15s ease;
+}
+
+.results-btn-primary:hover,
+.results-btn-primary:focus-visible {
+  background-color: var(--colour-primary-hover);
+}
+
+.results-btn-secondary {
+  background: transparent;
+  color: var(--colour-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.7rem 1.2rem;
+  border: 2px solid var(--colour-primary);
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.12s ease;
+}
+
+.results-btn-secondary:hover,
+.results-btn-secondary:focus-visible {
+  background: var(--colour-surface);
+}

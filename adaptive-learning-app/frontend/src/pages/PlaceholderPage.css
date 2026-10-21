@@ -1,0 +1,75 @@
+/*
+  PlaceholderPage.css
+  Shared styles for all "not yet implemented" placeholder pages.
+  Uses the same design tokens as App.css.
+*/
+
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.placeholder-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3rem 1.5rem;
+  background-color: var(--colour-surface);
+}
+
+.placeholder-card {
+  max-width: 600px;
+  width: 100%;
+  background: var(--colour-bg);
+  border: 2px dashed var(--colour-border);
+  border-radius: 8px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+  /* decorative — hidden from screen readers via aria-hidden */
+}
+
+.placeholder-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--colour-primary);
+  margin-bottom: 0.75rem;
+}
+
+.placeholder-notice {
+  display: inline-block;
+  background: #fff4e5;
+  color: #7a4500;
+  border: 1px solid #f6c47b;
+  border-radius: 4px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.placeholder-description {
+  color: var(--colour-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.placeholder-back-link {
+  display: inline-block;
+  color: var(--colour-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  font-size: 1rem;
+}
+
+.placeholder-back-link:hover,
+.placeholder-back-link:focus-visible {
+  color: var(--colour-primary-hover);
+}

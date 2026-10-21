@@ -1,0 +1,373 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VISION Project Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    background: #ffffff;
+    color: #1f2328;
+    padding: 2rem 1rem;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    border-bottom: 3px solid #1a3a8f;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1a3a8f;
+    margin-bottom: 0.2rem;
+  }
+  .header p { color: #57606a; font-size: 0.9rem; }
+  .badge-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 3px;
+    background: #f0f4ff;
+    border: 1px solid #c5cae9;
+    color: #1a3a8f;
+  }
+
+  /* Section */
+  .section { margin-bottom: 1.75rem; }
+  .section-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1a3a8f;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Two-column grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 540px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Stat boxes */
+  .stat-box {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a3a8f;
+    line-height: 1;
+    display: block;
+  }
+  .stat-label {
+    font-size: 0.78rem;
+    color: #57606a;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.3rem;
+    display: block;
+  }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th {
+    background: #f7f8fa;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 700;
+    color: #1f2328;
+  }
+  td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* Status pills */
+  .pill {
+    display: inline-block;
+    font-size: 0.73rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+  .pill-done  { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .pill-next  { background: #fff8e1; color: #5d3a00; border: 1px solid #ffe082; }
+  .pill-other { background: #f3e5f5; color: #4a148c; border: 1px solid #ce93d8; }
+
+  /* File list */
+  .file-list { list-style: none; display: flex; flex-direction: column; gap: 0.3rem; }
+  .file-list li {
+    font-size: 0.83rem;
+    font-family: "Consolas", "Courier New", monospace;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 0.3rem 0.7rem;
+    color: #1f2328;
+  }
+  .file-list li span {
+    float: right;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.75rem;
+    color: #57606a;
+    font-weight: 600;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 5px;
+    padding: 0.85rem 1rem;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: #1f2328;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* Warning box */
+  .warning {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: #5d3a00;
+    margin-top: 0.75rem;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <div class="header">
+    <h1>VISION — Adaptive Learning Platform</h1>
+    <p>Behaviour-Aware Adaptive Teaching Strategy Selection for Multilingual Personalized Learning of Visually Impaired Students</p>
+    <div class="badge-row">
+      <span class="badge">4SF24CI033</span>
+      <span class="badge">Third-Year AIML Engineering</span>
+      <span class="badge">Member 1 &amp; 2 Scope</span>
+      <span class="badge">Stage 5 Complete</span>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">At a Glance</div>
+    <div class="grid2">
+      <div class="stat-box">
+        <span class="stat-value">72</span>
+        <span class="stat-label">Backend Tests Passing</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value">0</span>
+        <span class="stat-label">TypeScript Build Errors</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value">36</span>
+        <span class="stat-label">Seed Questions (6 Topics)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value">12</span>
+        <span class="stat-label">Backend API Endpoints</span>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Technology Stack</div>
+    <table>
+      <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+      <tbody>
+        <tr><td>Frontend</td><td>React 19 · TypeScript · Vite · React Router v7</td></tr>
+        <tr><td>Backend</td><td>Python · FastAPI · SQLAlchemy · SQLite</td></tr>
+        <tr><td>Authentication</td><td>HttpOnly JWT cookie · bcrypt password hashing</td></tr>
+        <tr><td>Testing</td><td>pytest · FastAPI TestClient · httpx</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Completed — Stages 1–5</div>
+    <table>
+      <thead><tr><th>Stage / Step</th><th>What was built</th><th>Tests</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Stage 1</td>
+          <td>Project scaffold, 9-table SQLite schema, health endpoint, React routing skeleton</td>
+          <td><span class="pill pill-done">✅ Done</span></td>
+        </tr>
+        <tr>
+          <td>Stage 2</td>
+          <td>Register · Login · Logout · Me · Recover — HttpOnly cookie JWT auth</td>
+          <td><span class="pill pill-done">23 passed</span></td>
+        </tr>
+        <tr>
+          <td>Step A</td>
+          <td>Seed data — 2 subjects, 6 topics, 36 MCQ questions, 144 options, i18n rows</td>
+          <td><span class="pill pill-done">✅ Done</span></td>
+        </tr>
+        <tr>
+          <td>Step B</td>
+          <td>Assessment backend — subjects, start, question, answer, result endpoints</td>
+          <td><span class="pill pill-done">24 passed</span></td>
+        </tr>
+        <tr>
+          <td>Step C</td>
+          <td>Learner Profile API — GET/PUT /profile with mode + language validation</td>
+          <td><span class="pill pill-done">25 passed</span></td>
+        </tr>
+        <tr>
+          <td>Step D</td>
+          <td>ModeSelectorPage — 3 accessible radio-card options, saves to backend</td>
+          <td><span class="pill pill-done">✅ Build clean</span></td>
+        </tr>
+        <tr>
+          <td>Step E</td>
+          <td>DiagnosticPage · useAssessment hook · ResultsPage with topic mastery</td>
+          <td><span class="pill pill-done">✅ Build clean</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Backend API Endpoints</div>
+    <table>
+      <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>GET</td><td>/health</td><td>Health check</td></tr>
+        <tr><td>POST</td><td>/auth/register</td><td>Create learner account</td></tr>
+        <tr><td>POST</td><td>/auth/login</td><td>Login, set cookie</td></tr>
+        <tr><td>POST</td><td>/auth/logout</td><td>Clear cookie</td></tr>
+        <tr><td>GET</td><td>/auth/me</td><td>Current user</td></tr>
+        <tr><td>GET</td><td>/profile</td><td>Read learning mode &amp; language</td></tr>
+        <tr><td>PUT</td><td>/profile</td><td>Update learning mode &amp; language</td></tr>
+        <tr><td>GET</td><td>/assessment/subjects</td><td>List subjects + topics</td></tr>
+        <tr><td>POST</td><td>/assessment/start</td><td>Begin session, get question IDs</td></tr>
+        <tr><td>GET</td><td>/assessment/question/{id}</td><td>Fetch question (no answers)</td></tr>
+        <tr><td>POST</td><td>/assessment/answer</td><td>Submit answer, get feedback</td></tr>
+        <tr><td>GET</td><td>/assessment/result/{id}</td><td>Session summary + mastery</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Frontend Routes</div>
+    <table>
+      <thead><tr><th>Route</th><th>Page</th><th>Protected</th></tr></thead>
+      <tbody>
+        <tr><td>/</td><td>WelcomePage</td><td>No</td></tr>
+        <tr><td>/login</td><td>LoginPage</td><td>No</td></tr>
+        <tr><td>/register</td><td>RegisterPage</td><td>No</td></tr>
+        <tr><td>/dashboard</td><td>LearnerDashboard</td><td>Yes</td></tr>
+        <tr><td>/mode-select</td><td>ModeSelectorPage</td><td>Yes</td></tr>
+        <tr><td>/diagnostic</td><td>DiagnosticPage</td><td>Yes</td></tr>
+        <tr><td>/result/:sessionId</td><td>ResultsPage</td><td>Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Key Source Files</div>
+    <ul class="file-list">
+      <li>backend/main.py <span>FastAPI app + CORS + router registration</span></li>
+      <li>backend/app/models.py <span>9 SQLAlchemy tables</span></li>
+      <li>backend/app/routers/auth.py <span>5 auth endpoints</span></li>
+      <li>backend/app/routers/assessment.py <span>5 assessment endpoints</span></li>
+      <li>backend/app/routers/profile.py <span>GET/PUT /profile</span></li>
+      <li>backend/app/services/assessment_service.py <span>Scoring + mastery logic</span></li>
+      <li>backend/seed_data.py <span>36 idempotent seed questions</span></li>
+      <li>frontend/src/hooks/useAuth.ts <span>Login / logout / session restore</span></li>
+      <li>frontend/src/hooks/useProfile.ts <span>GET/PUT /profile</span></li>
+      <li>frontend/src/hooks/useAssessment.ts <span>Full assessment state machine</span></li>
+      <li>frontend/src/pages/DiagnosticPage.tsx <span>7-phase assessment flow</span></li>
+      <li>frontend/src/pages/ResultsPage.tsx <span>Score + topic mastery table</span></li>
+    </ul>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">How to Run</div>
+    <div class="code-block">Terminal 1 — Backend
+cd "...adaptive-learning-app\backend"
+.\venv\Scripts\python.exe -m uvicorn main:app --reload
+
+Terminal 2 — Frontend
+cd "...adaptive-learning-app\frontend"
+npm run dev
+
+Open browser → http://localhost:5173</div>
+  </div>
+
+  
+  <div class="section">
+    <div class="section-title">Remaining Work</div>
+    <table>
+      <thead><tr><th>Stage</th><th>Task</th><th>Owner</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Stage 4</td>
+          <td>Text-to-speech — read questions and explanations aloud</td>
+          <td><span class="pill pill-next">Member 1</span></td>
+        </tr>
+        <tr>
+          <td>Stage 6</td>
+          <td>Multilingual content — Hindi, Kannada, Tamil</td>
+          <td><span class="pill pill-next">Member 2</span></td>
+        </tr>
+        <tr>
+          <td>—</td>
+          <td>Behaviour-aware adaptive teaching strategy engine</td>
+          <td><span class="pill pill-other">Member 3</span></td>
+        </tr>
+        <tr>
+          <td>—</td>
+          <td>Full system integration</td>
+          <td><span class="pill pill-other">Member 4</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">Made with IBM Bob  ·  VISION Project  ·  4SF24CI033</div>
+</div>
+</body>
+</html>

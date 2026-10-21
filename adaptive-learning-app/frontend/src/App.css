@@ -1,0 +1,107 @@
+/* -----------------------------------------------
+   Global reset & base styles
+   ----------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Colour tokens — high-contrast palette for visually impaired users */
+  --colour-bg: #ffffff;
+  --colour-surface: #f0f4ff;
+  --colour-primary: #1a3a8f;
+  --colour-primary-hover: #0d2260;
+  --colour-text: #111111;
+  --colour-muted: #444444;
+  --colour-border: #cccccc;
+  --colour-focus: #e65c00;   /* vivid orange focus ring */
+
+  --font-base: "Segoe UI", Arial, sans-serif;
+  --font-size-base: 1.125rem;   /* 18 px — slightly larger for readability */
+  --line-height-base: 1.7;
+}
+
+body {
+  background-color: var(--colour-bg);
+  color: var(--colour-text);
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+/* Visible focus ring on every interactive element */
+:focus-visible {
+  outline: 3px solid var(--colour-focus);
+  outline-offset: 3px;
+}
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -----------------------------------------------
+   Skip-navigation link (global — used on every page)
+   Hidden off-screen until focused by keyboard
+   ----------------------------------------------- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  background: var(--colour-primary);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* -----------------------------------------------
+   Shared site-header / nav / footer (global)
+   Used on WelcomePage and placeholder pages
+   ----------------------------------------------- */
+.site-header {
+  background-color: var(--colour-primary);
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.site-logo {
+  font-size: 1.5rem;
+}
+
+.site-name {
+  color: #ffffff;
+  letter-spacing: 0.04em;
+}
+
+.site-footer {
+  background-color: var(--colour-primary);
+  color: #ffffff;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+}
