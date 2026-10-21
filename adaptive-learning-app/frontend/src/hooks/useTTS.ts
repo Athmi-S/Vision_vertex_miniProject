@@ -55,6 +55,11 @@ export interface UseTTSReturn {
   voiceName: string;
   /** Speak an arbitrary text string. Cancels any previous speech first. */
   speak: (text: string) => void;
+  /**
+   * Speak text and call onEnd when the utterance finishes.
+   * Used to chain TTS → auto-start STT automatically.
+   */
+  speakThen: (text: string, onEnd: () => void) => void;
   /** Stop any current or queued speech immediately. */
   stop: () => void;
 }
@@ -138,9 +143,13 @@ export function useTTS(languagePref: string = "en"): UseTTSReturn {
   // -------------------------------------------------------------------------
   // speak — cancel previous, create utterance, speak
   // -------------------------------------------------------------------------
-  const speak = useCallback(
-    (text: string) => {
-      if (!supported || !text.trim()) return;
+  /** Internal helper: create and start an utterance, call onEnd when done. */
+  const _speakWithCallback = useCallback(
+    (text: string, onEnd?: () => void) => {
+      if (!supported || !text.trim()) {
+        onEnd?.();
+        return;
+      }
 
       // Cancel any in-progress speech to prevent overlap
       window.speechSynthesis.cancel();
@@ -158,14 +167,24 @@ export function useTTS(languagePref: string = "en"): UseTTSReturn {
       utterance.volume = 1.0;
 
       utterance.onstart  = () => setSpeaking(true);
-      utterance.onend    = () => setSpeaking(false);
-      utterance.onerror  = () => setSpeaking(false);
+      utterance.onend    = () => { setSpeaking(false); onEnd?.(); };
+      utterance.onerror  = () => { setSpeaking(false); onEnd?.(); };
       utterance.onpause  = () => setSpeaking(false);
       utterance.onresume = () => setSpeaking(true);
 
       window.speechSynthesis.speak(utterance);
     },
     [supported]
+  );
+
+  const speak = useCallback(
+    (text: string) => _speakWithCallback(text),
+    [_speakWithCallback]
+  );
+
+  const speakThen = useCallback(
+    (text: string, onEnd: () => void) => _speakWithCallback(text, onEnd),
+    [_speakWithCallback]
   );
 
   // -------------------------------------------------------------------------
@@ -177,5 +196,5 @@ export function useTTS(languagePref: string = "en"): UseTTSReturn {
     setSpeaking(false);
   }, [supported]);
 
-  return { supported, speaking, isFallbackVoice, voiceName, speak, stop };
+  return { supported, speaking, isFallbackVoice, voiceName, speak, speakThen, stop };
 }

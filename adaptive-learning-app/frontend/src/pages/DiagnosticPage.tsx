@@ -23,13 +23,14 @@
  *  - Skip link and landmark regions
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
 import { useAssessment } from "../hooks/useAssessment";
 import type { SubjectOut } from "../hooks/useAssessment";
 import { useTTS } from "../hooks/useTTS";
+import { useSTT, matchOptionFromTranscript } from "../hooks/useSTT";
 import TTSToolbar from "../components/TTSToolbar";
 import "./DiagnosticPage.css";
 
@@ -73,7 +74,7 @@ function PageHeader({ onLogout }: { onLogout: () => void }) {
 function PageFooter() {
   return (
     <footer className="site-footer" role="contentinfo">
-      <p>VISION — Third-Year AIML Engineering Project &nbsp;|&nbsp; 4SF24CI033</p>
+      <p>VISION Adaptive Learning Platform</p>
     </footer>
   );
 }
@@ -121,8 +122,19 @@ function DiagnosticPage() {
     isFallbackVoice,
     voiceName,
     speak,
+    speakThen,
     stop: stopSpeech,
   } = useTTS(languagePref);
+
+  // STT — speech-to-text for voice answer input
+  const {
+    supported: sttSupported,
+    listening,
+    transcript,
+    sttError,
+    startListening,
+    stopListening,
+  } = useSTT();
 
   // Learner's current selection in the subject/topic dropdowns
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | "">("");
@@ -130,6 +142,33 @@ function DiagnosticPage() {
 
   // Which option the learner clicked before submitting
   const [pickedOptionId, setPickedOptionId] = useState<number | null>(null);
+
+  /**
+   * listeningMode controls what we do when STT returns a transcript.
+   * We keep BOTH a state (for re-render) and a ref (for reading inside
+   * stale-closure callbacks like useEffect([transcript])).
+   *
+   *   "answer"       — waiting for the learner to say an option number
+   *   "confirm_next" — asked "shall we move to next?" and waiting for yes/no
+   */
+  const listeningModeRef = useRef<"answer" | "confirm_next">("answer");
+
+  // Keep a ref of the current phase too, for the same stale-closure reason
+  const phaseRef = useRef(phase);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  // Keep refs of values used inside the transcript handler
+  const currentQuestionRef = useRef(currentQuestion);
+  useEffect(() => { currentQuestionRef.current = currentQuestion; }, [currentQuestion]);
+  const currentIndexRef = useRef(currentIndex);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  const questionIdsRef = useRef(questionIds);
+  useEffect(() => { questionIdsRef.current = questionIds; }, [questionIds]);
+
+  /** Update the listening mode ref (no state needed — refs don't re-render) */
+  function setMode(m: "answer" | "confirm_next") {
+    listeningModeRef.current = m;
+  }
 
   // -------------------------------------------------------------------------
   // Auth guard
@@ -186,13 +225,14 @@ function DiagnosticPage() {
   }, [phase, currentQuestion?.id]);
 
   // -------------------------------------------------------------------------
-  // Auto-announce: read new question aloud as soon as it appears.
-  // This lets visually impaired learners hear the question immediately
-  // without needing to find and click the "Read Question" button.
-  // A short delay gives the browser time to render before speaking.
+  // -------------------------------------------------------------------------
+  // Auto-announce question + AUTO-START listening when TTS finishes.
+  // After TTS reads the question the microphone opens automatically —
+  // the learner does not need to click anything.
   // -------------------------------------------------------------------------
   useEffect(() => {
-    if (phase === "in_question" && currentQuestion && ttsSupported) {
+    if (phase === "in_question" && currentQuestion) {
+      setMode("answer");
       const optionLines = currentQuestion.options
         .map((o, i) => `Option ${i + 1}: ${o.option_text}`)
         .join(". ");
@@ -200,47 +240,160 @@ function DiagnosticPage() {
         `Question ${currentIndex + 1} of ${questionIds.length}. ` +
         `${currentQuestion.question_text}. ` +
         `${optionLines}. ` +
-        `Press Tab to navigate options, then Tab to Submit Answer or Skip.`;
+        `Say your answer now.`;
 
-      // Small delay so the DOM has settled before speechSynthesis fires
-      const timer = setTimeout(() => speak(text), 400);
+      const timer = setTimeout(() => {
+        if (ttsSupported && sttSupported) {
+          // Speak, then auto-open mic when speech ends
+          speakThen(text, () => {
+            // Small gap before mic opens so TTS audio doesn't feed back
+            setTimeout(() => startListening(), 400);
+          });
+        } else if (ttsSupported) {
+          speak(text);
+        } else if (sttSupported) {
+          // No TTS — open mic immediately
+          startListening();
+        }
+      }, 400);
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestion?.id, phase]);
 
   // -------------------------------------------------------------------------
-  // Auto-announce: read feedback aloud as soon as the backend returns it.
-  // The explanation is only spoken AFTER the API has accepted the answer —
-  // never before submission.
+  // Auto-announce feedback, then ask "move to next?" and listen for yes/no.
   // -------------------------------------------------------------------------
   useEffect(() => {
-    if (phase === "feedback" && lastAnswerResult && ttsSupported) {
+    if (phase === "feedback" && lastAnswerResult) {
+      setMode("confirm_next");
       const outcome = lastAnswerResult.skipped
         ? "You skipped this question."
         : lastAnswerResult.is_correct
         ? "Correct!"
         : "Incorrect.";
       const explanation = lastAnswerResult.explanation
-        ? ` Explanation: ${lastAnswerResult.explanation}`
+        ? ` Explanation: ${lastAnswerResult.explanation}.`
         : "";
-      const nav =
-        currentIndex + 1 < questionIds.length
-          ? " Press Tab to go to the Next Question."
-          : " Press Tab to Finish Assessment.";
+      const isLast = currentIndex + 1 >= questionIds.length;
+      const prompt = isLast
+        ? " Shall we finish the assessment? Say yes to view results, or no to stay."
+        : " Shall we move to the next question? Say yes to continue, or no to stay.";
 
-      const timer = setTimeout(() => speak(`${outcome}${explanation}${nav}`), 300);
+      const fullText = `${outcome}${explanation}${prompt}`;
+
+      const timer = setTimeout(() => {
+        if (ttsSupported && sttSupported) {
+          speakThen(fullText, () => {
+            setTimeout(() => startListening(), 400);
+          });
+        } else if (ttsSupported) {
+          speak(fullText);
+        } else if (sttSupported) {
+          startListening();
+        }
+      }, 300);
       return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, lastAnswerResult?.attempt_id]);
 
   // -------------------------------------------------------------------------
-  // Stop speech when leaving the question/feedback phases entirely
+  // STT transcript handler — two modes.
+  // IMPORTANT: uses refs (phaseRef, listeningModeRef, etc.) NOT state values,
+  // because this effect only re-runs when `transcript` changes.  State values
+  // captured at effect-creation time would be stale by then.
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!transcript) return;
+
+    const currentPhase    = phaseRef.current;
+    const currentMode     = listeningModeRef.current;
+    const question        = currentQuestionRef.current;
+    const idx             = currentIndexRef.current;
+    const qIds            = questionIdsRef.current;
+    const isLast          = idx + 1 >= qIds.length;
+
+    // --- MODE: answer ---
+    if (currentPhase === "in_question" && currentMode === "answer" && question) {
+      const matchedId = matchOptionFromTranscript(transcript, question.options);
+
+      if (matchedId !== null) {
+        const matchedOpt = question.options.find((o: { id: number; option_text: string }) => o.id === matchedId);
+        const optIndex   = question.options.findIndex((o: { id: number }) => o.id === matchedId) + 1;
+        const confirmText = `Selecting Option ${optIndex}: ${matchedOpt?.option_text ?? ""}. Submitting.`;
+
+        setPickedOptionId(matchedId);
+
+        if (ttsSupported) {
+          speakThen(confirmText, () => submitAnswer(matchedId, false));
+        } else {
+          submitAnswer(matchedId, false);
+        }
+      } else {
+        // No match — tell the learner and re-open mic
+        const count = question.options.length;
+        const retryText =
+          `Could not understand. I heard: ${transcript}. ` +
+          `Please say a number from 1 to ${count}. For example say "one" or "option 2". ` +
+          `Listening again.`;
+        if (ttsSupported) {
+          speakThen(retryText, () => setTimeout(() => startListening(), 300));
+        } else {
+          startListening();
+        }
+      }
+      return;
+    }
+
+    // --- MODE: confirm_next ---
+    if (currentPhase === "feedback" && currentMode === "confirm_next") {
+      const t      = transcript.trim().toLowerCase();
+      const isYes  = /\b(yes|yeah|yep|sure|ok|okay|go|next|continue|proceed|finish|done)\b/.test(t);
+      const isNo   = /\b(no|nope|nah|wait|stop|stay|repeat|again)\b/.test(t);
+
+      if (isYes) {
+        const confirmText = isLast ? "Finishing assessment." : "Moving to the next question.";
+        if (ttsSupported) {
+          speakThen(confirmText, () => {
+            if (isLast) loadResult();
+            else nextQuestion();
+          });
+        } else {
+          if (isLast) loadResult();
+          else nextQuestion();
+        }
+      } else if (isNo) {
+        const stayText = "Okay, staying. Say yes when you are ready to continue.";
+        if (ttsSupported) {
+          speakThen(stayText, () => setTimeout(() => startListening(), 300));
+        } else {
+          startListening();
+        }
+      } else {
+        // Didn't catch yes or no — repeat the prompt and re-open mic
+        const askAgain = isLast
+          ? `I heard: ${transcript}. Please say yes to finish, or no to stay.`
+          : `I heard: ${transcript}. Please say yes to move on, or no to stay.`;
+        if (ttsSupported) {
+          speakThen(askAgain, () => setTimeout(() => startListening(), 300));
+        } else {
+          startListening();
+        }
+      }
+      return;
+    }
+  // transcript is the only real trigger; all other values read from refs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcript]);
+
+  // -------------------------------------------------------------------------
+  // Stop speech + mic when leaving active phases entirely
   // -------------------------------------------------------------------------
   useEffect(() => {
     if (phase !== "in_question" && phase !== "feedback" && phase !== "submitting") {
       stopSpeech();
+      stopListening();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -668,19 +821,26 @@ function DiagnosticPage() {
                 </div>
               </fieldset>
 
-              {/* ---- TTS toolbar (shown during in_question and feedback phases) ---- */}
+              {/* ---- Voice toolbar (TTS + STT) ---- */}
               <TTSToolbar
                 questionText={currentQuestion.question_text}
                 feedbackText={
                   phase === "feedback" ? buildFeedbackSpeech() : null
                 }
                 speaking={speaking}
-                supported={ttsSupported}
+                ttsSupported={ttsSupported}
                 isFallbackVoice={isFallbackVoice}
                 voiceName={voiceName}
                 onReadQuestion={handleTTSReadQuestion}
                 onReadFeedback={handleTTSReadFeedback}
                 onStop={stopSpeech}
+                sttSupported={sttSupported}
+                listening={listening}
+                transcript={transcript}
+                sttError={sttError}
+                onStartListening={startListening}
+                onStopListening={stopListening}
+                canAnswer={phase === "in_question"}
               />
 
               {/* ---- Action buttons ---- */}

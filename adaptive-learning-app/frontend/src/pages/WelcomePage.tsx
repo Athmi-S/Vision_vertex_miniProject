@@ -84,7 +84,7 @@ function WelcomePage() {
       {/* ── Page footer ── */}
       <footer className="site-footer" role="contentinfo">
         <p>
-          VISION — Third-Year AIML Engineering Project &nbsp;|&nbsp; 4SF24CI033
+          VISION Adaptive Learning Platform
         </p>
       </footer>
     </>

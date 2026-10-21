@@ -63,7 +63,7 @@ function PageHeader({ onLogout }: { onLogout: () => void }) {
 function PageFooter() {
   return (
     <footer className="site-footer" role="contentinfo">
-      <p>VISION — Third-Year AIML Engineering Project &nbsp;|&nbsp; 4SF24CI033</p>
+      <p>VISION Adaptive Learning Platform</p>
     </footer>
   );
 }
