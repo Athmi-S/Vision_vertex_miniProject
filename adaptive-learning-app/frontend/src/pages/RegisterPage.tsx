@@ -17,14 +17,32 @@ import { useAuth } from "../hooks/useAuth";
 import "./AuthForm.css";
 
 // ─── TTS helper ───────────────────────────────────────────────────────────────
+// Chrome's speechSynthesis.onend is unreliable — we use BOTH onend AND a
+// timeout fallback (words × avg ms/word) so the chain never gets stuck.
 function tts(text: string, onEnd?: () => void) {
-  if (!("speechSynthesis" in window)) { onEnd?.(); return; }
+  if (!("speechSynthesis" in window)) { setTimeout(() => onEnd?.(), 50); return; }
   window.speechSynthesis.cancel();
+
+  // Estimate speech duration: ~120ms per word, minimum 800ms
+  const words    = text.trim().split(/\s+/).length;
+  const estMs    = Math.max(words * 130, 800);
+
+  let called = false;
+  function done() {
+    if (called) return;
+    called = true;
+    // small gap after speech before mic opens (avoids feedback echo)
+    setTimeout(() => onEnd?.(), 350);
+  }
+
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.9; u.pitch = 1; u.volume = 1;
-  u.onend   = () => onEnd?.();
-  u.onerror = () => onEnd?.();
+  u.rate = 0.88; u.pitch = 1; u.volume = 1;
+  u.onend   = done;
+  u.onerror = done;
   window.speechSynthesis.speak(u);
+
+  // Fallback: if onend never fires, trigger after estimated duration + buffer
+  setTimeout(done, estMs + 1500);
 }
 
 // ─── STT helper ───────────────────────────────────────────────────────────────
@@ -35,11 +53,21 @@ function listenOnce(onResult: (t: string) => void, onError: () => void) {
   if (!SR) { onError(); return; }
   const r = new SR();
   r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 5;
+  r.continuous = false;
+
+  let handled = false;
   r.onresult = (e: any) => {
-    const transcript = e.results[0][0].transcript.trim();
-    onResult(transcript);
+    if (handled) return; handled = true;
+    onResult(e.results[0][0].transcript.trim());
   };
-  r.onerror = () => onError();
+  r.onerror = () => {
+    if (handled) return; handled = true;
+    onError();
+  };
+  r.onend = () => {
+    // if nothing heard and not yet handled → treat as error
+    if (!handled) { handled = true; onError(); }
+  };
   r.start();
 }
 
@@ -61,7 +89,8 @@ function normalise(raw: string, type: STTType): string {
       .map(w => WORD[w] ?? (/^\d$/.test(w) ? w : ""))
       .filter(Boolean).join("");
   }
-  return raw.trim().toLowerCase().replace(/\s+/g, "");
+  // text / username — keep alphanumeric only
+  return raw.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 // ─── Make value speakable ─────────────────────────────────────────────────────
@@ -69,12 +98,13 @@ function readable(value: string, type: STTType): string {
   if (type === "email")
     return value.replace(/@/, " at ").replace(/\./g, " dot ");
   if (type === "pin")
-    return value.split("").join(" ");
-  return value.split("").join(" ");
+    return value.split("").join(", ");
+  // spell out character by character for username
+  return value.split("").join(", ");
 }
 
 // ─── Single voice field step ──────────────────────────────────────────────────
-// Speaks prompt → listens → reads back → listens for yes/no → calls onConfirmed or retries
+// Flow: speak prompt → listen → read back → listen for yes/no → confirm or retry
 function voiceStep(
   prompt: string,
   type: STTType,
@@ -84,31 +114,36 @@ function voiceStep(
     listenOnce(
       (transcript) => {
         const value = normalise(transcript, type);
+        if (!value) {
+          // nothing useful heard
+          tts("I could not understand. Let us try again.", () =>
+            voiceStep(prompt, type, onConfirmed)
+          );
+          return;
+        }
         const label = readable(value, type);
         tts(
-          `I heard: ${label}. Is this correct? Say yes to confirm or no to try again.`,
-          () => {
-            listenOnce(
-              (answer) => {
-                const a = answer.trim().toLowerCase();
-                const yes = /\b(yes|yeah|yep|correct|right|ok|okay|confirm|sure)\b/.test(a);
-                if (yes) {
-                  onConfirmed(value);
-                } else {
-                  // retry
-                  voiceStep(prompt, type, onConfirmed);
-                }
-              },
-              () => voiceStep(prompt, type, onConfirmed), // mic error → retry
-            );
-          }
+          `I heard: ${label}. Say yes to confirm, or no to try again.`,
+          () => listenOnce(
+            (answer) => {
+              const yes = /\b(yes|yeah|yep|correct|right|ok|okay|confirm|sure)\b/
+                .test(answer.trim().toLowerCase());
+              if (yes) {
+                onConfirmed(value);
+              } else {
+                tts("Okay, let us try again.", () =>
+                  voiceStep(prompt, type, onConfirmed)
+                );
+              }
+            },
+            // yes/no mic failed → retry the whole step
+            () => voiceStep(prompt, type, onConfirmed)
+          )
         );
       },
-      () => {
-        tts("I did not hear you. Let us try again.", () =>
-          voiceStep(prompt, type, onConfirmed)
-        );
-      }
+      () => tts("I did not hear you. Let us try again.", () =>
+        voiceStep(prompt, type, onConfirmed)
+      )
     );
   });
 }

@@ -16,14 +16,25 @@ import { useAuth } from "../hooks/useAuth";
 import "./AuthForm.css";
 
 // ─── TTS helper ───────────────────────────────────────────────────────────────
+// Chrome's speechSynthesis.onend is unreliable — dual onend + timeout fallback
 function tts(text: string, onEnd?: () => void) {
-  if (!("speechSynthesis" in window)) { onEnd?.(); return; }
+  if (!("speechSynthesis" in window)) { setTimeout(() => onEnd?.(), 50); return; }
   window.speechSynthesis.cancel();
+
+  const words = text.trim().split(/\s+/).length;
+  const estMs = Math.max(words * 130, 800);
+
+  let called = false;
+  function done() {
+    if (called) return; called = true;
+    setTimeout(() => onEnd?.(), 350); // gap before mic opens
+  }
+
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.9; u.pitch = 1; u.volume = 1;
-  u.onend   = () => onEnd?.();
-  u.onerror = () => onEnd?.();
+  u.rate = 0.88; u.pitch = 1; u.volume = 1;
+  u.onend = done; u.onerror = done;
   window.speechSynthesis.speak(u);
+  setTimeout(done, estMs + 1500); // fallback
 }
 
 // ─── STT helper ───────────────────────────────────────────────────────────────
@@ -31,9 +42,12 @@ function listenOnce(onResult: (t: string) => void, onError: () => void) {
   const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
   if (!SR) { onError(); return; }
   const r = new SR();
-  r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 5;
-  r.onresult = (e: any) => onResult(e.results[0][0].transcript.trim());
-  r.onerror  = () => onError();
+  r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 5; r.continuous = false;
+
+  let handled = false;
+  r.onresult = (e: any) => { if (handled) return; handled = true; onResult(e.results[0][0].transcript.trim()); };
+  r.onerror  = ()       => { if (handled) return; handled = true; onError(); };
+  r.onend    = ()       => { if (!handled) { handled = true; onError(); } };
   r.start();
 }
 
@@ -64,18 +78,23 @@ function voiceStep(prompt: string, type: STTType, onConfirmed: (v: string) => vo
     listenOnce(
       (transcript) => {
         const value = type === "email" ? normaliseEmail(transcript) : normalisePin(transcript);
+        if (!value) {
+          tts("I could not understand. Let us try again.", () =>
+            voiceStep(prompt, type, onConfirmed));
+          return;
+        }
         const label = type === "email"
           ? value.replace(/@/, " at ").replace(/\./g, " dot ")
-          : value.split("").join(" ");
+          : value.split("").join(", ");
 
         tts(
-          `I heard: ${label}. Say yes to confirm or no to try again.`,
+          `I heard: ${label}. Say yes to confirm, or no to try again.`,
           () => listenOnce(
             (answer) => {
               const yes = /\b(yes|yeah|yep|correct|right|ok|okay|confirm|sure)\b/
                 .test(answer.toLowerCase());
               if (yes) onConfirmed(value);
-              else voiceStep(prompt, type, onConfirmed);
+              else tts("Okay, let us try again.", () => voiceStep(prompt, type, onConfirmed));
             },
             () => voiceStep(prompt, type, onConfirmed)
           )
