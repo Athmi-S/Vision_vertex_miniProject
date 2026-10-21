@@ -288,3 +288,41 @@
 .voice-cancel-btn:hover {
   background: #dbeafe;
 }
+
+/* "Restart Voice Mode" button — shown when voice was cancelled */
+.voice-restart-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 2px solid var(--colour-primary);
+  border-radius: 6px;
+  color: var(--colour-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.55rem 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.voice-restart-btn:hover:not(:disabled) {
+  background: var(--colour-primary);
+  color: #fff;
+}
+
+.voice-restart-btn:focus-visible {
+  outline: 3px solid var(--colour-primary);
+  outline-offset: 2px;
+}
+
+/* Unsupported-browser notice — shown in Firefox/Safari */
+.voice-unavailable-notice {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 5px;
+  color: #78350f;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
