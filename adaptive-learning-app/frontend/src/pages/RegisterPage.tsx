@@ -1,284 +1,229 @@
 /**
- * RegisterPage.tsx — Fully voice-driven registration for visually impaired users.
+ * RegisterPage.tsx — Fully hands-free registration for visually impaired users.
  *
- * Auto-voice flow (no button clicks needed):
+ * Auto flow (zero clicks needed):
  *  1. Page loads → TTS: "Create your account."
- *  2. Auto-prompts for username → mic → confirm
- *  3. Auto-prompts for email → mic → confirm
- *  4. Auto-prompts for password digits → mic → confirm
- *  5. Form submits automatically
+ *  2. Auto mic → user says username → TTS reads back → yes/no
+ *  3. Auto mic → user says email → TTS reads back → yes/no
+ *  4. Auto mic → user says password digits → TTS reads back → yes/no
+ *  5. Account created → TTS: "Account created. Going to login." → auto redirect
  *
- * Manual mode: type in fields + click Create Account.
- * 🎤 buttons let the user re-trigger voice for any field.
+ * Manual fallback: type in fields + click Create Account.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { useVoiceInput } from "../hooks/useVoiceInput";
 import "./AuthForm.css";
 
-// Standalone TTS helper
+// ─── TTS helper ───────────────────────────────────────────────────────────────
 function tts(text: string, onEnd?: () => void) {
   if (!("speechSynthesis" in window)) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.92; u.pitch = 1; u.volume = 1;
-  if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
+  u.rate = 0.9; u.pitch = 1; u.volume = 1;
+  u.onend   = () => onEnd?.();
+  u.onerror = () => onEnd?.();
   window.speechSynthesis.speak(u);
 }
 
+// ─── STT helper ───────────────────────────────────────────────────────────────
+type STTType = "email" | "pin" | "text";
+
+function listenOnce(onResult: (t: string) => void, onError: () => void) {
+  const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+  if (!SR) { onError(); return; }
+  const r = new SR();
+  r.lang = "en-US"; r.interimResults = false; r.maxAlternatives = 5;
+  r.onresult = (e: any) => {
+    const transcript = e.results[0][0].transcript.trim();
+    onResult(transcript);
+  };
+  r.onerror = () => onError();
+  r.start();
+}
+
+// ─── Normalise spoken input ───────────────────────────────────────────────────
+function normalise(raw: string, type: STTType): string {
+  if (type === "email") {
+    return raw.toLowerCase()
+      .replace(/\s+at\s+/gi, "@")
+      .replace(/\s+dot\s+/gi, ".")
+      .replace(/\s/g, "");
+  }
+  if (type === "pin") {
+    const WORD: Record<string, string> = {
+      zero:"0",one:"1",two:"2",three:"3",four:"4",
+      five:"5",six:"6",seven:"7",eight:"8",nine:"9",
+    };
+    return raw.trim().toLowerCase()
+      .split(/[\s,]+/)
+      .map(w => WORD[w] ?? (/^\d$/.test(w) ? w : ""))
+      .filter(Boolean).join("");
+  }
+  return raw.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+// ─── Make value speakable ─────────────────────────────────────────────────────
+function readable(value: string, type: STTType): string {
+  if (type === "email")
+    return value.replace(/@/, " at ").replace(/\./g, " dot ");
+  if (type === "pin")
+    return value.split("").join(" ");
+  return value.split("").join(" ");
+}
+
+// ─── Single voice field step ──────────────────────────────────────────────────
+// Speaks prompt → listens → reads back → listens for yes/no → calls onConfirmed or retries
+function voiceStep(
+  prompt: string,
+  type: STTType,
+  onConfirmed: (value: string) => void,
+) {
+  tts(prompt, () => {
+    listenOnce(
+      (transcript) => {
+        const value = normalise(transcript, type);
+        const label = readable(value, type);
+        tts(
+          `I heard: ${label}. Is this correct? Say yes to confirm or no to try again.`,
+          () => {
+            listenOnce(
+              (answer) => {
+                const a = answer.trim().toLowerCase();
+                const yes = /\b(yes|yeah|yep|correct|right|ok|okay|confirm|sure)\b/.test(a);
+                if (yes) {
+                  onConfirmed(value);
+                } else {
+                  // retry
+                  voiceStep(prompt, type, onConfirmed);
+                }
+              },
+              () => voiceStep(prompt, type, onConfirmed), // mic error → retry
+            );
+          }
+        );
+      },
+      () => {
+        tts("I did not hear you. Let us try again.", () =>
+          voiceStep(prompt, type, onConfirmed)
+        );
+      }
+    );
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [username, setUsername]         = useState("");
-  const [email, setEmail]               = useState("");
-  const [password, setPassword]         = useState("");
+  const [username, setUsername]   = useState("");
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError]   = useState("");
-  const [successMsg, setSuccessMsg]     = useState("");
-  const [loading, setLoading]           = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [successMsg, setSuccessMsg]   = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("");
+
+  // Errors for manual mode
   const [usernameError, setUsernameError] = useState("");
   const [emailError, setEmailError]       = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // Which field voice is filling right now
-  const [voiceTarget, setVoiceTarget] = useState<"username" | "email" | "password" | null>(null);
+  // ── Auto voice flow on mount ──────────────────────────────────────────────
+  const started = useRef(false);
 
-  // One voice input hook per field
-  const voiceUsername = useVoiceInput();
-  const voiceEmail    = useVoiceInput();
-  const voicePassword = useVoiceInput();
-
-  // Refs for latest values (needed in async callbacks)
-  const usernameRef = useRef("");
-  const emailRef    = useRef("");
-  const passwordRef = useRef("");
-  useEffect(() => { usernameRef.current = username; }, [username]);
-  useEffect(() => { emailRef.current    = email;    }, [email]);
-  useEffect(() => { passwordRef.current = password; }, [password]);
-
-  // -------------------------------------------------------------------------
-  // Auto-start: voice for username on mount
-  // -------------------------------------------------------------------------
-  const announced = useRef(false);
   useEffect(() => {
-    if (announced.current) return;
-    announced.current = true;
-    const timer = setTimeout(() => {
-      tts(
-        "Create your account. Registration page. " +
-        "Please say your username after the beep. " +
-        "Use letters and numbers only. For example: athmi123.",
-        () => {
-          setVoiceTarget("username");
-          voiceUsername.start(
-            "Please say your username. Letters and numbers only.",
-            "username"
-          );
-        }
-      );
-    }, 700);
-    return () => clearTimeout(timer);
+    if (started.current) return;
+    started.current = true;
+
+    tts(
+      "Create your account. I will ask for your username, email, and password. " +
+      "Say each one clearly after you hear the prompt.",
+      () => startVoiceFlow()
+    );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Username confirmed → auto-start email
-  // -------------------------------------------------------------------------
-  useEffect(() => {
-    if (voiceUsername.phase === "confirmed" && voiceUsername.value) {
-      setUsername(voiceUsername.value);
-      usernameRef.current = voiceUsername.value;
-      setUsernameError("");
-      setVoiceTarget(null);
-      setTimeout(() => {
-        tts(
-          "Username confirmed. Now please say your email address. " +
-          "For example: athmi at gmail dot com.",
-          () => {
-            setVoiceTarget("email");
-            voiceEmail.start(
-              "Please say your email address. For example: athmi at gmail dot com.",
-              "email"
+  function startVoiceFlow() {
+    // Step 1: username
+    setVoiceStatus("Listening for username…");
+    voiceStep(
+      "Please say your username. Use letters and numbers only. For example: athmi 123.",
+      "text",
+      (uname) => {
+        setUsername(uname);
+        setVoiceStatus("Username confirmed. Listening for email…");
+        // Step 2: email
+        voiceStep(
+          "Please say your email address. For example: athmi at gmail dot com.",
+          "email",
+          (em) => {
+            setEmail(em);
+            setVoiceStatus("Email confirmed. Listening for password…");
+            // Step 3: password
+            voiceStep(
+              "Please say your password digits one at a time. " +
+              "It must be at least 8 digits. For example: 1 2 3 4 5 6 7 8.",
+              "pin",
+              (pwd) => {
+                setPassword(pwd);
+                setVoiceStatus("Password confirmed. Creating your account…");
+                // Auto submit
+                submitAccount(uname, em, pwd);
+              }
             );
           }
         );
-      }, 400);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceUsername.phase, voiceUsername.value]);
+      }
+    );
+  }
 
-  // -------------------------------------------------------------------------
-  // Email confirmed → auto-start password
-  // -------------------------------------------------------------------------
-  useEffect(() => {
-    if (voiceEmail.phase === "confirmed" && voiceEmail.value) {
-      setEmail(voiceEmail.value);
-      emailRef.current = voiceEmail.value;
-      setEmailError("");
-      setVoiceTarget(null);
-      setTimeout(() => {
-        tts(
-          "Email confirmed. Now please say your password digits one at a time. " +
-          "Your password must be at least 8 digits. " +
-          "For example: 1 2 3 4 5 6 7 8.",
-          () => {
-            setVoiceTarget("password");
-            voicePassword.start(
-              "Say your password digits one at a time.",
-              "pin"
-            );
-          }
-        );
-      }, 400);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voiceEmail.phase, voiceEmail.value]);
-
-  // -------------------------------------------------------------------------
-  // Password confirmed → auto-submit
-  // -------------------------------------------------------------------------
-  const autoSubmit = useCallback(async (
-    usernameVal: string,
-    emailVal: string,
-    passwordVal: string,
-  ) => {
-    setVoiceTarget(null);
-    setServerError(""); setSuccessMsg("");
+  // ── Submit ────────────────────────────────────────────────────────────────
+  async function submitAccount(uname: string, em: string, pwd: string) {
     setLoading(true);
-    tts("Password confirmed. Creating your account now.");
+    setServerError("");
     try {
-      await register(usernameVal.trim(), emailVal.trim(), passwordVal);
-      setSuccessMsg("Account created! Redirecting to login…");
-      tts("Account created successfully. Redirecting to login.");
-      setTimeout(() => navigate("/login"), 1500);
+      await register(uname.trim(), em.trim(), pwd);
+      setSuccessMsg("Account created! Going to login…");
+      setVoiceStatus("");
+      tts("Account created successfully. Going to login page now.", () => {
+        navigate("/login");
+      });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      const msg = err instanceof Error ? err.message : "Registration failed.";
       setServerError(msg);
-      tts(`Error: ${msg}`);
+      setVoiceStatus("");
+      tts(`Registration failed. ${msg}. Please try again.`, () => startVoiceFlow());
     } finally {
       setLoading(false);
     }
-  }, [register, navigate]);
-
-  useEffect(() => {
-    if (voicePassword.phase === "confirmed" && voicePassword.value) {
-      setPassword(voicePassword.value);
-      passwordRef.current = voicePassword.value;
-      setPasswordError("");
-      autoSubmit(usernameRef.current, emailRef.current, voicePassword.value);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voicePassword.phase, voicePassword.value]);
-
-  // -------------------------------------------------------------------------
-  // Manual 🎤 button handlers
-  // -------------------------------------------------------------------------
-  function handleVoiceUsername() {
-    setVoiceTarget("username");
-    voiceUsername.start(
-      "Please say your username. Letters and numbers only. For example: athmi123.",
-      "username"
-    );
   }
 
-  function handleVoiceEmail() {
-    setVoiceTarget("email");
-    voiceEmail.start(
-      "Please say your email address. For example: athmi at gmail dot com.",
-      "email"
-    );
-  }
-
-  function handleVoicePassword() {
-    setVoiceTarget("password");
-    tts(
-      "Please say your password digits one at a time. For example: 1 2 3 4 5 6 7 8.",
-      () => voicePassword.start("Say your password digits one at a time.", "pin")
-    );
-  }
-
-  function cancelVoice() {
-    voiceUsername.cancel();
-    voiceEmail.cancel();
-    voicePassword.cancel();
-    setVoiceTarget(null);
-    tts("Voice input cancelled. You can type your details manually.");
-  }
-
-  // -------------------------------------------------------------------------
-  // Validation + submit
-  // -------------------------------------------------------------------------
+  // ── Manual form submit ────────────────────────────────────────────────────
   function validate(): boolean {
     let valid = true;
     setUsernameError(""); setEmailError(""); setPasswordError("");
-
-    if (!username.trim()) {
-      setUsernameError("Username is required."); valid = false;
-    } else if (username.trim().length < 3) {
+    if (!username.trim() || username.trim().length < 3) {
       setUsernameError("Username must be at least 3 characters."); valid = false;
-    } else if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
-      setUsernameError("Username may only contain letters, numbers, and underscores."); valid = false;
     }
-    if (!email.trim()) {
-      setEmailError("Email address is required."); valid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
       setEmailError("Please enter a valid email address."); valid = false;
     }
-    if (!password) {
-      setPasswordError("Password is required."); valid = false;
-    } else if (password.length < 8) {
+    if (!password || password.length < 8) {
       setPasswordError("Password must be at least 8 characters."); valid = false;
-    } else if (!/\d/.test(password)) {
-      setPasswordError("Password must contain at least one number."); valid = false;
     }
     return valid;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(""); setSuccessMsg("");
     if (!validate()) return;
-    setLoading(true);
-    try {
-      await register(username.trim(), email.trim(), password);
-      setSuccessMsg("Account created! Redirecting to login…");
-      tts("Account created successfully. Redirecting to login.");
-      setTimeout(() => navigate("/login"), 1500);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Registration failed. Please try again.";
-        setServerError(msg);
-        tts(`Error: ${msg}`);
-    } finally {
-      setLoading(false);
-    }
+    submitAccount(username, email, password);
   }
-
-  // -------------------------------------------------------------------------
-  // Voice status text
-  // -------------------------------------------------------------------------
-  function voiceStatusText(): string {
-    const hook =
-      voiceTarget === "username" ? voiceUsername :
-      voiceTarget === "email"    ? voiceEmail    : voicePassword;
-    if (!voiceTarget) return "";
-    switch (hook.phase) {
-      case "prompting":  return "Speaking prompt…";
-      case "listening":  return "🎤 Listening… speak now";
-      case "confirming": return `I heard: "${hook.rawTranscript}" — say yes or no`;
-      case "confirmed":  return "✅ Confirmed!";
-      case "error":      return hook.error;
-      default:           return "";
-    }
-  }
-
-  const isVoiceActive = voiceTarget !== null && (
-    voiceUsername.phase !== "idle" ||
-    voiceEmail.phase    !== "idle" ||
-    voicePassword.phase !== "idle"
-  );
 
   return (
     <div className="auth-page">
@@ -295,27 +240,14 @@ function RegisterPage() {
         <div className="auth-card">
           <h1 className="auth-title">Create your account</h1>
           <p className="auth-subtitle">
-            Join VISION and start your personalised learning journey.
+            Voice will guide you — just speak when prompted.
           </p>
 
-          {/* Voice mode status banner */}
-          {isVoiceActive && (
-            <div
-              className="voice-status-banner"
-              role="status"
-              aria-live="assertive"
-              aria-atomic="true"
-            >
-              <span className="voice-status-icon" aria-hidden="true">🎙️</span>
-              <span>{voiceStatusText()}</span>
-              <button
-                type="button"
-                className="voice-cancel-btn"
-                onClick={cancelVoice}
-                aria-label="Cancel voice input"
-              >
-                Cancel
-              </button>
+          {/* Voice status */}
+          {voiceStatus && (
+            <div className="voice-status-banner" role="status" aria-live="polite">
+              <span aria-hidden="true">🎙️</span>
+              <span>{voiceStatus}</span>
             </div>
           )}
 
@@ -328,89 +260,55 @@ function RegisterPage() {
             </p>
           )}
 
-          <form
-            className="auth-form"
-            onSubmit={handleSubmit}
-            noValidate
-            aria-label="Registration form"
-          >
-            {/* ── Username ── */}
+          <form className="auth-form" onSubmit={handleManualSubmit} noValidate aria-label="Registration form">
+
+            {/* Username */}
             <div className="form-group">
               <label className="form-label" htmlFor="reg-username">Username</label>
               <div className="voice-field-row">
                 <input
-                  id="reg-username"
-                  type="text"
-                  className="form-input"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="username"
-                  aria-required="true"
+                  id="reg-username" type="text" className="form-input"
+                  value={username} onChange={e => setUsername(e.target.value)}
+                  autoComplete="username" aria-required="true"
                   aria-invalid={usernameError ? "true" : "false"}
-                  aria-describedby={usernameError ? "reg-username-error" : "reg-username-hint"}
-                  disabled={loading || isVoiceActive}
-                  placeholder="Type or use the mic button"
+                  disabled={loading}
+                  placeholder="Auto-filled by voice or type here"
                 />
-                <button
-                  type="button"
-                  className="voice-field-btn"
-                  onClick={handleVoiceUsername}
-                  disabled={loading || isVoiceActive}
-                  aria-label="Speak your username"
-                  title="Speak your username"
-                >
-                  🎤
-                </button>
+                <button type="button" className="voice-field-btn" disabled={loading}
+                  aria-label="Re-speak username"
+                  onClick={() => voiceStep(
+                    "Please say your username.",
+                    "text",
+                    v => setUsername(v)
+                  )}>🎤</button>
               </div>
-              <span id="reg-username-hint" className="field-hint">
-                Letters, numbers, underscores. Min 3 characters. Press 🎤 to speak.
-              </span>
-              {usernameError && (
-                <span id="reg-username-error" className="field-error" role="alert">
-                  {usernameError}
-                </span>
-              )}
+              {usernameError && <span className="field-error" role="alert">{usernameError}</span>}
             </div>
 
-            {/* ── Email ── */}
+            {/* Email */}
             <div className="form-group">
               <label className="form-label" htmlFor="reg-email">Email address</label>
               <div className="voice-field-row">
                 <input
-                  id="reg-email"
-                  type="email"
-                  className="form-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  aria-required="true"
+                  id="reg-email" type="email" className="form-input"
+                  value={email} onChange={e => setEmail(e.target.value)}
+                  autoComplete="email" aria-required="true"
                   aria-invalid={emailError ? "true" : "false"}
-                  aria-describedby={emailError ? "reg-email-error" : "reg-email-hint"}
-                  disabled={loading || isVoiceActive}
-                  placeholder="Type or use the mic button"
+                  disabled={loading}
+                  placeholder="Auto-filled by voice or type here"
                 />
-                <button
-                  type="button"
-                  className="voice-field-btn"
-                  onClick={handleVoiceEmail}
-                  disabled={loading || isVoiceActive}
-                  aria-label="Speak your email address"
-                  title="Speak your email"
-                >
-                  🎤
-                </button>
+                <button type="button" className="voice-field-btn" disabled={loading}
+                  aria-label="Re-speak email"
+                  onClick={() => voiceStep(
+                    "Please say your email address.",
+                    "email",
+                    v => setEmail(v)
+                  )}>🎤</button>
               </div>
-              <span id="reg-email-hint" className="field-hint">
-                Press 🎤 to say your email address aloud
-              </span>
-              {emailError && (
-                <span id="reg-email-error" className="field-error" role="alert">
-                  {emailError}
-                </span>
-              )}
+              {emailError && <span className="field-error" role="alert">{emailError}</span>}
             </div>
 
-            {/* ── Password ── */}
+            {/* Password */}
             <div className="form-group">
               <label className="form-label" htmlFor="reg-password">Password</label>
               <div className="voice-field-row">
@@ -419,61 +317,38 @@ function RegisterPage() {
                     id="reg-password"
                     type={showPassword ? "text" : "password"}
                     className="form-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="new-password"
-                    aria-required="true"
+                    value={password} onChange={e => setPassword(e.target.value)}
+                    autoComplete="new-password" aria-required="true"
                     aria-invalid={passwordError ? "true" : "false"}
-                    aria-describedby={
-                      passwordError ? "reg-password-error" : "reg-password-hint"
-                    }
-                    disabled={loading || isVoiceActive}
-                    placeholder="Type or use the mic button"
+                    disabled={loading}
+                    placeholder="Auto-filled by voice or type here"
                   />
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
+                  <button type="button" className="password-toggle"
+                    onClick={() => setShowPassword(s => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}>
                     {showPassword ? "🙈" : "👁"}
                   </button>
                 </div>
-                <button
-                  type="button"
-                  className="voice-field-btn"
-                  onClick={handleVoicePassword}
-                  disabled={loading || isVoiceActive}
-                  aria-label="Speak your password as PIN digits"
-                  title="Speak password as PIN digits"
-                >
-                  🎤
-                </button>
+                <button type="button" className="voice-field-btn" disabled={loading}
+                  aria-label="Re-speak password"
+                  onClick={() => voiceStep(
+                    "Please say your password digits one at a time.",
+                    "pin",
+                    v => setPassword(v)
+                  )}>🎤</button>
               </div>
-              <span id="reg-password-hint" className="field-hint">
-                Min 8 characters with at least one number. Press 🎤 to say digits aloud.
-              </span>
-              {passwordError && (
-                <span id="reg-password-error" className="field-error" role="alert">
-                  {passwordError}
-                </span>
-              )}
+              <span className="field-hint">Min 8 digits. Voice fills automatically.</span>
+              {passwordError && <span className="field-error" role="alert">{passwordError}</span>}
             </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              className="auth-submit-btn"
-              disabled={loading || isVoiceActive}
-              aria-busy={loading}
-            >
+            <button type="submit" className="auth-submit-btn"
+              disabled={loading} aria-busy={loading}>
               {loading ? "Creating account…" : "Create Account"}
             </button>
           </form>
 
           <p className="auth-alt-link">
-            Already have an account?{" "}
-            <Link to="/login">Sign in</Link>
+            Already have an account? <Link to="/login">Sign in</Link>
           </p>
         </div>
       </main>
