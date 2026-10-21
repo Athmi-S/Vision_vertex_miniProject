@@ -111,3 +111,43 @@
   border-radius: 5px;
   margin-top: 1rem;
 }
+
+/* Microphone / STT button */
+.tts-btn-mic {
+  border-color: #1a3a8f;
+  color: #1a3a8f;
+}
+
+.tts-btn-mic:hover {
+  background: #e8edff;
+}
+
+.tts-btn-mic:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Transcript display */
+.tts-transcript {
+  font-size: 0.83rem;
+  color: var(--colour-text);
+  background: #e8edff;
+  border: 1px solid #c5cae9;
+  border-radius: 4px;
+  padding: 0.3rem 0.75rem;
+  margin-top: 0.35rem;
+  width: 100%;
+}
+
+/* STT error */
+.tts-stt-error {
+  font-size: 0.83rem;
+  color: #8b0000;
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  border-radius: 4px;
+  padding: 0.3rem 0.75rem;
+  margin-top: 0.35rem;
+  width: 100%;
+  font-weight: 600;
+}
