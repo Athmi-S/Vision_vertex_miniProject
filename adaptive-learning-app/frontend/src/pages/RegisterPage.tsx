@@ -1,23 +1,25 @@
 /**
- * RegisterPage.tsx — Accessible registration form with full voice input support.
+ * RegisterPage.tsx — Fully voice-driven registration for visually impaired users.
  *
- * Voice flow:
- *  1. Page loads → TTS announces "Create your account. Registration page."
- *  2. 🎤 on Username → speak username → TTS reads back → yes/no confirm
- *  3. 🎤 on Email    → speak email    → TTS spells it back → yes/no confirm
- *  4. 🎤 on Password → speak PIN digits → TTS reads digits back → yes/no confirm
+ * Auto-voice flow (no button clicks needed):
+ *  1. Page loads → TTS: "Create your account."
+ *  2. Auto-prompts for username → mic → confirm
+ *  3. Auto-prompts for email → mic → confirm
+ *  4. Auto-prompts for password digits → mic → confirm
+ *  5. Form submits automatically
  *
- * Keyboard / screen reader accessibility fully preserved alongside voice.
+ * Manual mode: type in fields + click Create Account.
+ * 🎤 buttons let the user re-trigger voice for any field.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import "./AuthForm.css";
 
-// Standalone speak helper
-function speak(text: string, onEnd?: () => void) {
+// Standalone TTS helper
+function tts(text: string, onEnd?: () => void) {
   if (!("speechSynthesis" in window)) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
@@ -49,58 +51,135 @@ function RegisterPage() {
   const voiceEmail    = useVoiceInput();
   const voicePassword = useVoiceInput();
 
-  // Announce page on mount
+  // Refs for latest values (needed in async callbacks)
+  const usernameRef = useRef("");
+  const emailRef    = useRef("");
+  const passwordRef = useRef("");
+  useEffect(() => { usernameRef.current = username; }, [username]);
+  useEffect(() => { emailRef.current    = email;    }, [email]);
+  useEffect(() => { passwordRef.current = password; }, [password]);
+
+  // -------------------------------------------------------------------------
+  // Auto-start: voice for username on mount
+  // -------------------------------------------------------------------------
   const announced = useRef(false);
   useEffect(() => {
     if (announced.current) return;
     announced.current = true;
-    const timer = setTimeout(() =>
-      speak(
+    const timer = setTimeout(() => {
+      tts(
         "Create your account. Registration page. " +
-        "You can type your details, or press the microphone buttons to use your voice. " +
-        "There are three fields: username, email address, and password. " +
-        "Press Tab to move between fields."
-      ), 600);
+        "Please say your username after the beep. " +
+        "Use letters and numbers only. For example: athmi123.",
+        () => {
+          setVoiceTarget("username");
+          voiceUsername.start(
+            "Please say your username. Letters and numbers only.",
+            "username"
+          );
+        }
+      );
+    }, 700);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // username confirmed
+  // -------------------------------------------------------------------------
+  // Username confirmed → auto-start email
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (voiceUsername.phase === "confirmed" && voiceUsername.value) {
       setUsername(voiceUsername.value);
+      usernameRef.current = voiceUsername.value;
       setUsernameError("");
       setVoiceTarget(null);
-      speak("Username set. Moving to email address.");
+      setTimeout(() => {
+        tts(
+          "Username confirmed. Now please say your email address. " +
+          "For example: athmi at gmail dot com.",
+          () => {
+            setVoiceTarget("email");
+            voiceEmail.start(
+              "Please say your email address. For example: athmi at gmail dot com.",
+              "email"
+            );
+          }
+        );
+      }, 400);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceUsername.phase, voiceUsername.value]);
 
-  // email confirmed
+  // -------------------------------------------------------------------------
+  // Email confirmed → auto-start password
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (voiceEmail.phase === "confirmed" && voiceEmail.value) {
       setEmail(voiceEmail.value);
+      emailRef.current = voiceEmail.value;
       setEmailError("");
       setVoiceTarget(null);
-      speak("Email address set. Moving to password.");
+      setTimeout(() => {
+        tts(
+          "Email confirmed. Now please say your password digits one at a time. " +
+          "Your password must be at least 8 digits. " +
+          "For example: 1 2 3 4 5 6 7 8.",
+          () => {
+            setVoiceTarget("password");
+            voicePassword.start(
+              "Say your password digits one at a time.",
+              "pin"
+            );
+          }
+        );
+      }, 400);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceEmail.phase, voiceEmail.value]);
 
-  // password confirmed
+  // -------------------------------------------------------------------------
+  // Password confirmed → auto-submit
+  // -------------------------------------------------------------------------
+  const autoSubmit = useCallback(async (
+    usernameVal: string,
+    emailVal: string,
+    passwordVal: string,
+  ) => {
+    setVoiceTarget(null);
+    setServerError(""); setSuccessMsg("");
+    setLoading(true);
+    tts("Password confirmed. Creating your account now.");
+    try {
+      await register(usernameVal.trim(), emailVal.trim(), passwordVal);
+      setSuccessMsg("Account created! Redirecting to login…");
+      tts("Account created successfully. Redirecting to login.");
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      setServerError(msg);
+      tts(`Error: ${msg}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [register, navigate]);
+
   useEffect(() => {
     if (voicePassword.phase === "confirmed" && voicePassword.value) {
       setPassword(voicePassword.value);
+      passwordRef.current = voicePassword.value;
       setPasswordError("");
-      setVoiceTarget(null);
-      speak("Password set. Press Enter or Tab to create your account.");
+      autoSubmit(usernameRef.current, emailRef.current, voicePassword.value);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voicePassword.phase, voicePassword.value]);
 
   // -------------------------------------------------------------------------
-  // Voice button handlers
+  // Manual 🎤 button handlers
   // -------------------------------------------------------------------------
   function handleVoiceUsername() {
     setVoiceTarget("username");
     voiceUsername.start(
-      "Please say your username. Use letters and numbers only. For example: athmi123.",
+      "Please say your username. Letters and numbers only. For example: athmi123.",
       "username"
     );
   }
@@ -115,11 +194,9 @@ function RegisterPage() {
 
   function handleVoicePassword() {
     setVoiceTarget("password");
-    speak(
-      "For your password, say your digits one at a time. " +
-      "Your password must be at least 8 digits long. " +
-      "For example: 1 2 3 4 5 6 7 8. Say your PIN now.",
-      () => voicePassword.start("Say your PIN digits now, one at a time.", "pin")
+    tts(
+      "Please say your password digits one at a time. For example: 1 2 3 4 5 6 7 8.",
+      () => voicePassword.start("Say your password digits one at a time.", "pin")
     );
   }
 
@@ -128,7 +205,7 @@ function RegisterPage() {
     voiceEmail.cancel();
     voicePassword.cancel();
     setVoiceTarget(null);
-    speak("Voice input cancelled.");
+    tts("Voice input cancelled. You can type your details manually.");
   }
 
   // -------------------------------------------------------------------------
@@ -168,12 +245,12 @@ function RegisterPage() {
     try {
       await register(username.trim(), email.trim(), password);
       setSuccessMsg("Account created! Redirecting to login…");
-      speak("Account created successfully. Redirecting to login.");
+      tts("Account created successfully. Redirecting to login.");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Registration failed. Please try again.";
-      setServerError(msg);
-      speak(`Error: ${msg}`);
+        setServerError(msg);
+        tts(`Error: ${msg}`);
     } finally {
       setLoading(false);
     }

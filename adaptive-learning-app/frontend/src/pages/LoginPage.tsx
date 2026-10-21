@@ -1,26 +1,26 @@
 /**
- * LoginPage.tsx — Accessible login form with full voice input support.
+ * LoginPage.tsx — Fully voice-driven login for visually impaired users.
  *
- * Voice flow:
- *  1. Page loads → TTS announces "Welcome back. Login page."
- *  2. "Speak Email" button → TTS prompts → user speaks → TTS reads back →
- *     user says yes/no to confirm → field filled automatically
- *  3. Password: three options offered:
- *     a) Speak a PIN  → user says "1 2 3 4" → stored as "1234" (pin mode)
- *     b) Type it      → normal keyboard input
- *     c) Show/hide toggle for sighted helpers
+ * Auto-voice flow (no button clicks needed):
+ *  1. Page loads → TTS: "Welcome back. Login page."
+ *  2. TTS automatically prompts for email → mic opens → user speaks
+ *  3. TTS reads back email → user says yes/no
+ *  4. On yes → TTS automatically prompts for password → mic opens → user speaks
+ *  5. TTS reads back password digits → user says yes/no
+ *  6. On yes → form submits automatically
  *
- * Keyboard / screen reader accessibility is fully preserved alongside voice.
+ * Manual mode still available: type in fields + click Sign In.
+ * 🎤 buttons next to fields let user re-trigger voice for that field.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useVoiceInput } from "../hooks/useVoiceInput";
 import "./AuthForm.css";
 
-// Speak helper (standalone, no hook needed)
-function speak(text: string, onEnd?: () => void) {
+// Standalone TTS helper
+function tts(text: string, onEnd?: () => void) {
   if (!("speechSynthesis" in window)) { onEnd?.(); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
@@ -41,51 +41,109 @@ function LoginPage() {
   const [emailError, setEmailError]     = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // Which field the voice input hook is currently filling
+  // Which field voice is currently filling
   const [voiceTarget, setVoiceTarget] = useState<"email" | "password" | null>(null);
 
-  // Voice input hook (shared for email + password)
   const voiceEmail    = useVoiceInput();
   const voicePassword = useVoiceInput();
 
-  // Announce page on mount
+  // Refs to hold latest email/password so submit can read them from callbacks
+  const emailRef    = useRef("");
+  const passwordRef = useRef("");
+  useEffect(() => { emailRef.current = email; }, [email]);
+  useEffect(() => { passwordRef.current = password; }, [password]);
+
+  // -------------------------------------------------------------------------
+  // Auto-start voice for email on mount
+  // -------------------------------------------------------------------------
   const announced = useRef(false);
   useEffect(() => {
     if (announced.current) return;
     announced.current = true;
-    const timer = setTimeout(() =>
-      speak(
+    const timer = setTimeout(() => {
+      tts(
         "Welcome back. Login page. " +
-        "You can type your details, or press the microphone buttons to use your voice. " +
-        "Press Tab to move between fields."
-      ), 600);
+        "Please say your email address after the beep. " +
+        "For example: athmi at gmail dot com.",
+        () => {
+          // Auto-start email voice input right after announcement
+          setVoiceTarget("email");
+          voiceEmail.start(
+            "Please say your email address. For example: athmi at gmail dot com.",
+            "email"
+          );
+        }
+      );
+    }, 700);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When voice email is confirmed → fill the field
+  // -------------------------------------------------------------------------
+  // Email confirmed → auto-start password voice
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (voiceEmail.phase === "confirmed" && voiceEmail.value) {
       setEmail(voiceEmail.value);
+      emailRef.current = voiceEmail.value;
       setEmailError("");
       setVoiceTarget(null);
-      speak("Email address set. Moving to password.");
+
+      // Automatically move to password — no button click needed
+      setTimeout(() => {
+        tts(
+          "Email confirmed. Now please say your password digits one at a time. " +
+          "For example: 1 2 3 4 5 6 7 8.",
+          () => {
+            setVoiceTarget("password");
+            voicePassword.start(
+              "Say your password digits one at a time.",
+              "pin"
+            );
+          }
+        );
+      }, 400);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceEmail.phase, voiceEmail.value]);
 
-  // When voice password is confirmed → fill the field
+  // -------------------------------------------------------------------------
+  // Password confirmed → auto-submit
+  // -------------------------------------------------------------------------
+  const autoSubmit = useCallback(async (emailVal: string, passwordVal: string) => {
+    setVoiceTarget(null);
+    setServerError("");
+    setLoading(true);
+    tts("Password confirmed. Signing you in now.");
+    try {
+      await login(emailVal, passwordVal);
+      tts("Login successful. Welcome back.");
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Login failed. Please try again.";
+      setServerError(msg);
+      tts(`Login failed. ${msg}. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  }, [login, navigate]);
+
   useEffect(() => {
     if (voicePassword.phase === "confirmed" && voicePassword.value) {
       setPassword(voicePassword.value);
+      passwordRef.current = voicePassword.value;
       setPasswordError("");
-      setVoiceTarget(null);
-      speak("Password set. Press Enter or Tab to Sign In.");
+      // Auto-submit using the refs (always current values)
+      autoSubmit(emailRef.current, voicePassword.value);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voicePassword.phase, voicePassword.value]);
 
   // -------------------------------------------------------------------------
-  // Voice button handlers
+  // Manual 🎤 button handlers (re-trigger voice for a specific field)
   // -------------------------------------------------------------------------
   function handleVoiceEmail() {
+    voicePassword.cancel();
     setVoiceTarget("email");
     voiceEmail.start(
       "Please say your email address. For example: athmi at gmail dot com.",
@@ -95,10 +153,9 @@ function LoginPage() {
 
   function handleVoicePassword() {
     setVoiceTarget("password");
-    speak(
-      "For your password, say your digits one at a time. For example: 1 2 3 4 5 6 7 8. " +
-      "Say your PIN now.",
-      () => voicePassword.start("Say your PIN digits now.", "pin")
+    tts(
+      "Please say your password digits one at a time. For example: 1 2 3 4 5 6 7 8.",
+      () => voicePassword.start("Say your password digits now.", "pin")
     );
   }
 
@@ -106,26 +163,22 @@ function LoginPage() {
     voiceEmail.cancel();
     voicePassword.cancel();
     setVoiceTarget(null);
-    speak("Voice input cancelled.");
+    tts("Voice input cancelled. You can type your details manually.");
   }
 
   // -------------------------------------------------------------------------
-  // Validation + submit
+  // Manual form submit (typed input)
   // -------------------------------------------------------------------------
   function validate(): boolean {
     let valid = true;
-    setEmailError("");
-    setPasswordError("");
+    setEmailError(""); setPasswordError("");
     if (!email.trim()) {
-      setEmailError("Email address is required.");
-      valid = false;
+      setEmailError("Email address is required."); valid = false;
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      setEmailError("Please enter a valid email address.");
-      valid = false;
+      setEmailError("Please enter a valid email address."); valid = false;
     }
     if (!password) {
-      setPasswordError("Password is required.");
-      valid = false;
+      setPasswordError("Password is required."); valid = false;
     }
     return valid;
   }
@@ -141,30 +194,32 @@ function LoginPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed. Please try again.";
       setServerError(msg);
-      speak(`Error: ${msg}`);
+      tts(`Error: ${msg}`);
     } finally {
       setLoading(false);
     }
   }
 
   // -------------------------------------------------------------------------
-  // Voice status label shown in the UI while voice is active
+  // Voice status banner text
   // -------------------------------------------------------------------------
   function voiceStatusText(): string {
     const hook = voiceTarget === "email" ? voiceEmail : voicePassword;
     if (!voiceTarget) return "";
     switch (hook.phase) {
-      case "prompting":   return "Speaking prompt…";
-      case "listening":   return "🎤 Listening… speak now";
-      case "confirming":  return `I heard: "${hook.rawTranscript}" — say yes or no`;
-      case "confirmed":   return "✅ Confirmed!";
-      case "error":       return hook.error;
-      default:            return "";
+      case "prompting":  return "Speaking prompt…";
+      case "listening":  return "🎤 Listening… speak now";
+      case "confirming": return `I heard: "${hook.rawTranscript}" — say yes or no`;
+      case "confirmed":  return "✅ Confirmed!";
+      case "error":      return hook.error || "Error. Please try again.";
+      default:           return "Preparing…";
     }
   }
 
-  const isVoiceActive = voiceTarget !== null &&
-    (voiceEmail.phase !== "idle" || voicePassword.phase !== "idle");
+  const isVoiceActive = voiceTarget !== null && (
+    voiceEmail.phase    !== "idle" ||
+    voicePassword.phase !== "idle"
+  );
 
   return (
     <div className="auth-page">
@@ -182,7 +237,7 @@ function LoginPage() {
           <h1 className="auth-title">Welcome back</h1>
           <p className="auth-subtitle">Sign in to continue your learning journey.</p>
 
-          {/* Voice mode status banner */}
+          {/* Voice status banner */}
           {isVoiceActive && (
             <div
               className="voice-status-banner"
@@ -203,7 +258,7 @@ function LoginPage() {
             </div>
           )}
 
-          {/* Server error banner */}
+          {/* Server error */}
           {serverError && (
             <p className="auth-error-banner" role="alert">{serverError}</p>
           )}
@@ -231,7 +286,7 @@ function LoginPage() {
                   aria-invalid={emailError ? "true" : "false"}
                   aria-describedby={emailError ? "login-email-error" : "login-email-hint"}
                   disabled={loading || isVoiceActive}
-                  placeholder="Type or use the mic button"
+                  placeholder="Say your email or type here"
                 />
                 <button
                   type="button"
@@ -239,13 +294,13 @@ function LoginPage() {
                   onClick={handleVoiceEmail}
                   disabled={loading || isVoiceActive}
                   aria-label="Speak your email address"
-                  title="Speak your email"
+                  title="Speak email"
                 >
                   🎤
                 </button>
               </div>
               <span id="login-email-hint" className="field-hint">
-                Press 🎤 to say your email address aloud
+                Voice starts automatically — or press 🎤 to speak your email
               </span>
               {emailError && (
                 <span id="login-email-error" className="field-error" role="alert">
@@ -274,7 +329,7 @@ function LoginPage() {
                       passwordError ? "login-password-error" : "login-password-hint"
                     }
                     disabled={loading || isVoiceActive}
-                    placeholder="Type or use the mic button"
+                    placeholder="Say your PIN or type here"
                   />
                   <button
                     type="button"
@@ -290,14 +345,14 @@ function LoginPage() {
                   className="voice-field-btn"
                   onClick={handleVoicePassword}
                   disabled={loading || isVoiceActive}
-                  aria-label="Speak your password as a PIN"
-                  title="Speak password as PIN digits"
+                  aria-label="Speak your password as PIN digits"
+                  title="Speak password"
                 >
                   🎤
                 </button>
               </div>
               <span id="login-password-hint" className="field-hint">
-                Press 🎤 to say your PIN digits aloud (e.g. "1 2 3 4 5 6 7 8")
+                Spoken automatically after email — or press 🎤 to re-speak
               </span>
               {passwordError && (
                 <span id="login-password-error" className="field-error" role="alert">
