@@ -197,3 +197,94 @@
 .auth-alt-link a:focus-visible {
   color: var(--colour-primary-hover);
 }
+
+/* -----------------------------------------------
+   Voice input UI — field row, mic button, status
+   ----------------------------------------------- */
+
+/* Row containing the input + mic button side by side */
+.voice-field-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.voice-field-row .form-input {
+  flex: 1;
+}
+
+/* The 🎤 button next to each field */
+.voice-field-btn {
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 2px solid var(--colour-primary);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--colour-primary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.voice-field-btn:hover:not(:disabled) {
+  background: var(--colour-primary);
+  color: #fff;
+}
+
+.voice-field-btn:focus-visible {
+  outline: 3px solid var(--colour-primary);
+  outline-offset: 2px;
+}
+
+.voice-field-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Hint text below each field */
+.field-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--colour-muted);
+  margin-top: 0.25rem;
+}
+
+/* Banner shown during active voice session */
+.voice-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #1e40af;
+  flex-wrap: wrap;
+}
+
+.voice-status-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.voice-cancel-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  color: #1e40af;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.voice-cancel-btn:hover {
+  background: #dbeafe;
+}
