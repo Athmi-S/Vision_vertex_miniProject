@@ -114,17 +114,17 @@ function LoginPage() {
     setVoiceTarget(null);
     setServerError("");
     setLoading(true);
-    tts("Password confirmed. Signing you in now.");
     try {
       await login(emailVal, passwordVal);
-      tts("Login successful. Welcome back.");
-      navigate("/dashboard");
+      // Navigate INSIDE the tts onEnd callback so we wait for speech to finish
+      tts("Password confirmed. Login successful. Going to your dashboard now.", () => {
+        navigate("/dashboard");
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed. Please try again.";
       setServerError(msg);
-      tts(`Login failed. ${msg}. Please try again.`);
-    } finally {
       setLoading(false);
+      tts(`Login failed. ${msg}. Please try again.`);
     }
   }, [login, navigate]);
 
