@@ -1,0 +1,328 @@
+/*
+  AuthForm.css — shared styles for Login and Register forms.
+  Uses the same design tokens as App.css.
+*/
+
+/* -----------------------------------------------
+   Page layout
+   ----------------------------------------------- */
+.auth-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.auth-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3rem 1.5rem;
+  background-color: var(--colour-surface);
+}
+
+.auth-main:focus {
+  outline: none;
+}
+
+/* -----------------------------------------------
+   Card
+   ----------------------------------------------- */
+.auth-card {
+  max-width: 480px;
+  width: 100%;
+  background: var(--colour-bg);
+  border: 1px solid var(--colour-border);
+  border-radius: 8px;
+  padding: 2.5rem 2rem;
+}
+
+.auth-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--colour-primary);
+  margin-bottom: 0.25rem;
+}
+
+.auth-subtitle {
+  font-size: 0.95rem;
+  color: var(--colour-muted);
+  margin-bottom: 1.75rem;
+}
+
+/* -----------------------------------------------
+   Form fields
+   ----------------------------------------------- */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--colour-text);
+}
+
+.form-input {
+  padding: 0.6rem 0.85rem;
+  border: 2px solid var(--colour-border);
+  border-radius: 5px;
+  font-size: 1rem;
+  font-family: var(--font-base);
+  color: var(--colour-text);
+  background: var(--colour-bg);
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.form-input:focus {
+  border-color: var(--colour-primary);
+  outline: none;
+}
+
+.form-input[aria-invalid="true"] {
+  border-color: #cc0000;
+}
+
+/* Password field wrapper (input + show/hide toggle) */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper .form-input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--colour-muted);
+  padding: 0.2rem 0.4rem;
+  line-height: 1;
+}
+
+.password-toggle:focus-visible {
+  outline: 3px solid var(--colour-focus);
+  border-radius: 3px;
+}
+
+/* Field-level error message */
+.field-error {
+  font-size: 0.85rem;
+  color: #cc0000;
+  font-weight: 600;
+}
+
+/* -----------------------------------------------
+   Server-level error / success banners
+   ----------------------------------------------- */
+.auth-error-banner {
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  color: #8b0000;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.auth-success-banner {
+  background: #f0fff4;
+  border: 1px solid #b2dfdb;
+  color: #1b5e20;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* -----------------------------------------------
+   Submit button
+   ----------------------------------------------- */
+.auth-submit-btn {
+  background-color: var(--colour-primary);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background-color 0.15s ease;
+  margin-top: 0.5rem;
+}
+
+.auth-submit-btn:hover,
+.auth-submit-btn:focus-visible {
+  background-color: var(--colour-primary-hover);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* -----------------------------------------------
+   Link to other auth page
+   ----------------------------------------------- */
+.auth-alt-link {
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  color: var(--colour-muted);
+  text-align: center;
+}
+
+.auth-alt-link a {
+  color: var(--colour-primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.auth-alt-link a:hover,
+.auth-alt-link a:focus-visible {
+  color: var(--colour-primary-hover);
+}
+
+/* -----------------------------------------------
+   Voice input UI — field row, mic button, status
+   ----------------------------------------------- */
+
+/* Row containing the input + mic button side by side */
+.voice-field-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.voice-field-row .form-input {
+  flex: 1;
+}
+
+/* The 🎤 button next to each field */
+.voice-field-btn {
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 2px solid var(--colour-primary);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--colour-primary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.voice-field-btn:hover:not(:disabled) {
+  background: var(--colour-primary);
+  color: #fff;
+}
+
+.voice-field-btn:focus-visible {
+  outline: 3px solid var(--colour-primary);
+  outline-offset: 2px;
+}
+
+.voice-field-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Hint text below each field */
+.field-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--colour-muted);
+  margin-top: 0.25rem;
+}
+
+/* Banner shown during active voice session */
+.voice-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #1e40af;
+  flex-wrap: wrap;
+}
+
+.voice-status-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.voice-cancel-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid #93c5fd;
+  border-radius: 4px;
+  color: #1e40af;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.voice-cancel-btn:hover {
+  background: #dbeafe;
+}
+
+/* "Restart Voice Mode" button — shown when voice was cancelled */
+.voice-restart-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 2px solid var(--colour-primary);
+  border-radius: 6px;
+  color: var(--colour-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.55rem 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.voice-restart-btn:hover:not(:disabled) {
+  background: var(--colour-primary);
+  color: #fff;
+}
+
+.voice-restart-btn:focus-visible {
+  outline: 3px solid var(--colour-primary);
+  outline-offset: 2px;
+}
+
+/* Unsupported-browser notice — shown in Firefox/Safari */
+.voice-unavailable-notice {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 5px;
+  color: #78350f;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
