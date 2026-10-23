@@ -1,0 +1,247 @@
+/*
+  ModeSelectorPage.css — Styles for the learning mode selection screen.
+
+  Design tokens from App.css are reused throughout.
+  The three mode cards use large click/tap targets and clear focus rings
+  for keyboard and switch-access users.
+*/
+
+/* -----------------------------------------------
+   Page shell (matches auth-page / placeholder-page)
+   ----------------------------------------------- */
+.mode-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.mode-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3rem 1.5rem;
+  background-color: var(--colour-surface);
+}
+
+.mode-main:focus {
+  outline: none;
+}
+
+/* -----------------------------------------------
+   Content card
+   ----------------------------------------------- */
+.mode-card {
+  max-width: 680px;
+  width: 100%;
+  background: var(--colour-bg);
+  border: 1px solid var(--colour-border);
+  border-radius: 8px;
+  padding: 2.5rem 2rem;
+}
+
+.mode-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--colour-primary);
+  margin-bottom: 0.3rem;
+}
+
+.mode-subtitle {
+  font-size: 0.97rem;
+  color: var(--colour-muted);
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+/* -----------------------------------------------
+   Status banners (loading / error / success)
+   Reuse the same visual language as AuthForm.css
+   ----------------------------------------------- */
+.mode-error-banner {
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  color: #8b0000;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.mode-success-banner {
+  background: #f0fff4;
+  border: 1px solid #b2dfdb;
+  color: #1b5e20;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.mode-loading-text {
+  color: var(--colour-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+/* -----------------------------------------------
+   fieldset / legend — wraps the three radio cards
+   ----------------------------------------------- */
+.mode-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 2rem;
+}
+
+.mode-legend {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--colour-text);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* -----------------------------------------------
+   Mode option grid
+   ----------------------------------------------- */
+.mode-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 520px) {
+  .mode-options {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* -----------------------------------------------
+   Individual mode card — built on a <label> that
+   wraps a visually hidden <input type="radio">.
+   This gives full keyboard + screen-reader support.
+   ----------------------------------------------- */
+.mode-option-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 1.4rem 1rem;
+  border: 2px solid var(--colour-border);
+  border-radius: 8px;
+  background: var(--colour-bg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  position: relative;
+  /* Minimum touch target height */
+  min-height: 130px;
+  justify-content: center;
+}
+
+/* Hover state */
+.mode-option-label:hover {
+  border-color: var(--colour-primary);
+  background: #f0f4ff;
+}
+
+/* Selected state */
+.mode-option-label.selected {
+  border-color: var(--colour-primary);
+  background: #e8edff;
+  box-shadow: 0 0 0 2px var(--colour-primary);
+}
+
+/* Focus ring — shown when the hidden radio is focused via keyboard */
+.mode-option-radio:focus-visible ~ .mode-option-body {
+  /* The focus is on the <input>, not the <label>.
+     We transfer focus styling to the label via the sibling selector on the
+     label itself — see below via :focus-within. */
+}
+
+.mode-option-label:focus-within {
+  outline: 3px solid var(--colour-focus);
+  outline-offset: 2px;
+}
+
+/* Visually hidden radio input — still accessible to screen readers */
+.mode-option-radio {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.mode-option-icon {
+  font-size: 2rem;
+  line-height: 1;
+  /* aria-hidden on the span in JSX */
+}
+
+.mode-option-title {
+  font-weight: 700;
+  font-size: 0.97rem;
+  color: var(--colour-text);
+  line-height: 1.3;
+}
+
+.mode-option-desc {
+  font-size: 0.82rem;
+  color: var(--colour-muted);
+  line-height: 1.4;
+}
+
+/* -----------------------------------------------
+   Confirm button
+   ----------------------------------------------- */
+.mode-confirm-btn {
+  display: block;
+  width: 100%;
+  background-color: var(--colour-primary);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background-color 0.15s ease;
+}
+
+.mode-confirm-btn:hover,
+.mode-confirm-btn:focus-visible {
+  background-color: var(--colour-primary-hover);
+}
+
+.mode-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* -----------------------------------------------
+   Back link
+   ----------------------------------------------- */
+.mode-back-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--colour-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: var(--font-base);
+}
+
+.mode-back-link:hover,
+.mode-back-link:focus-visible {
+  color: var(--colour-primary-hover);
+}

@@ -1,0 +1,376 @@
+/*
+  DiagnosticPage.css — Styles for the assessment flow.
+  Reuses design tokens from App.css throughout.
+*/
+
+/* -----------------------------------------------
+   Page shell
+   ----------------------------------------------- */
+.diag-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.diag-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--colour-surface);
+}
+
+.diag-main:focus {
+  outline: none;
+}
+
+/* -----------------------------------------------
+   Card (shared by all phases)
+   ----------------------------------------------- */
+.diag-card {
+  max-width: 720px;
+  width: 100%;
+  background: var(--colour-bg);
+  border: 1px solid var(--colour-border);
+  border-radius: 8px;
+  padding: 2.5rem 2rem;
+}
+
+.diag-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--colour-primary);
+  margin-bottom: 0.35rem;
+}
+
+.diag-subtitle {
+  font-size: 0.95rem;
+  color: var(--colour-muted);
+  margin-bottom: 1.75rem;
+  line-height: 1.5;
+}
+
+/* -----------------------------------------------
+   Banners
+   ----------------------------------------------- */
+.diag-error-banner {
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  color: #8b0000;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.diag-info-banner {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #5d3a00;
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.diag-loading-text {
+  color: var(--colour-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* -----------------------------------------------
+   Subject / topic selector
+   ----------------------------------------------- */
+.diag-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.diag-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.diag-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--colour-text);
+}
+
+.diag-select {
+  padding: 0.6rem 0.85rem;
+  border: 2px solid var(--colour-border);
+  border-radius: 5px;
+  font-size: 1rem;
+  font-family: var(--font-base);
+  color: var(--colour-text);
+  background: var(--colour-bg);
+  width: 100%;
+}
+
+.diag-select:focus {
+  border-color: var(--colour-primary);
+  outline: 3px solid var(--colour-focus);
+  outline-offset: 2px;
+}
+
+/* -----------------------------------------------
+   Progress bar + counter
+   ----------------------------------------------- */
+.diag-progress-area {
+  margin-bottom: 1.5rem;
+}
+
+.diag-progress-label {
+  font-size: 0.88rem;
+  color: var(--colour-muted);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.diag-progress-bar-track {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.diag-progress-bar-fill {
+  height: 100%;
+  background: var(--colour-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* -----------------------------------------------
+   Question area
+   ----------------------------------------------- */
+.diag-question-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.diag-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  color: var(--colour-muted);
+  text-transform: capitalize;
+}
+
+.diag-question-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--colour-text);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+/* -----------------------------------------------
+   Answer options (radio-card pattern from ModeSelector)
+   ----------------------------------------------- */
+.diag-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.diag-option-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 2px solid var(--colour-border);
+  border-radius: 6px;
+  background: var(--colour-bg);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+  position: relative;
+  min-height: 52px;
+}
+
+.diag-option-label:hover {
+  border-color: var(--colour-primary);
+  background: #f0f4ff;
+}
+
+.diag-option-label.selected {
+  border-color: var(--colour-primary);
+  background: #e8edff;
+  box-shadow: 0 0 0 2px var(--colour-primary);
+}
+
+/* After submission: colour feedback */
+.diag-option-label.correct {
+  border-color: #2e7d32;
+  background: #e8f5e9;
+  box-shadow: 0 0 0 2px #2e7d32;
+}
+
+.diag-option-label.wrong {
+  border-color: #c62828;
+  background: #ffebee;
+  box-shadow: 0 0 0 2px #c62828;
+}
+
+.diag-option-label:focus-within {
+  outline: 3px solid var(--colour-focus);
+  outline-offset: 2px;
+}
+
+/* Visually hidden radio */
+.diag-option-radio {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.diag-option-text {
+  font-size: 0.97rem;
+  color: var(--colour-text);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.diag-option-suffix {
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* -----------------------------------------------
+   Explanation box (shown after submission)
+   ----------------------------------------------- */
+.diag-explanation {
+  background: #f0f4ff;
+  border: 1px solid #c5cae9;
+  border-radius: 5px;
+  padding: 0.85rem 1rem;
+  font-size: 0.93rem;
+  color: var(--colour-text);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.diag-explanation strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--colour-primary);
+}
+
+/* -----------------------------------------------
+   Outcome banner (correct / wrong / skipped)
+   ----------------------------------------------- */
+.diag-outcome {
+  border-radius: 5px;
+  padding: 0.7rem 1rem;
+  font-size: 0.97rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+.diag-outcome.correct {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  color: #1b5e20;
+}
+
+.diag-outcome.wrong {
+  background: #ffebee;
+  border: 1px solid #ef9a9a;
+  color: #b71c1c;
+}
+
+.diag-outcome.skipped {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #5d3a00;
+}
+
+/* -----------------------------------------------
+   Action buttons
+   ----------------------------------------------- */
+.diag-btn-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.diag-btn-primary {
+  background-color: var(--colour-primary);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background-color 0.15s ease;
+}
+
+.diag-btn-primary:hover,
+.diag-btn-primary:focus-visible {
+  background-color: var(--colour-primary-hover);
+}
+
+.diag-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.diag-btn-secondary {
+  background: transparent;
+  color: var(--colour-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.7rem 1.2rem;
+  border: 2px solid var(--colour-primary);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.diag-btn-secondary:hover,
+.diag-btn-secondary:focus-visible {
+  background: var(--colour-surface);
+}
+
+.diag-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -----------------------------------------------
+   Back / nav links
+   ----------------------------------------------- */
+.diag-back-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--colour-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.diag-back-link:hover,
+.diag-back-link:focus-visible {
+  color: var(--colour-primary-hover);
+}

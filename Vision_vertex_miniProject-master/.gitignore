@@ -1,0 +1,47 @@
+
+
+
+# Python / Backend
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment — NEVER commit
+adaptive-learning-app/backend/venv/
+
+# Secrets — NEVER commit
+adaptive-learning-app/backend/.env
+.env
+
+# Database — contains real user data
+adaptive-learning-app/backend/vision.db
+adaptive-learning-app/backend/test_vision.db
+*.db
+*.sqlite
+
+# Pytest cache
+.pytest_cache/
+adaptive-learning-app/backend/.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Node / Frontend
+adaptive-learning-app/frontend/node_modules/
+adaptive-learning-app/frontend/dist/
+node_modules/
+dist/
+*.local
+
+# npm logs
+npm-debug.log*
+yarn-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.sw?

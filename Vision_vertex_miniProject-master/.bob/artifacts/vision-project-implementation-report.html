@@ -1,0 +1,397 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VISION Project Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 2rem 1rem;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.2rem; }
+  h2 { font-size: 1.05rem; font-weight: 700; margin: 1.6rem 0 0.5rem; color: #1f2328; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3rem; }
+  h3 { font-size: 0.95rem; font-weight: 700; margin: 1rem 0 0.3rem; }
+  p  { margin-bottom: 0.5rem; color: #1f2328; }
+  small { color: #57606a; font-size: 0.82rem; }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+  }
+  .badge-green  { background: #dcfce7; color: #166534; }
+  .badge-blue   { background: #dbeafe; color: #1e40af; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+  .badge-gray   { background: #f3f4f6; color: #374151; }
+
+  .meta-row { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; margin-bottom: 1.2rem; }
+  .meta-item { font-size: 0.82rem; color: #57606a; }
+  .meta-item strong { color: #1f2328; }
+
+  .card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .card-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin-bottom: 0.75rem; }
+  th { background: #f7f8fa; font-weight: 700; text-align: left; padding: 0.4rem 0.6rem; border: 1px solid #e5e7eb; color: #57606a; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 0.38rem 0.6rem; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  code {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-family: "Cascadia Code", "Fira Mono", Consolas, monospace;
+    font-size: 0.82rem;
+    color: #1f2328;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    font-family: "Cascadia Code", "Fira Mono", Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+  }
+  pre .comment { color: #6c7086; }
+  pre .cmd     { color: #a6e3a1; }
+  pre .url     { color: #89dceb; }
+
+  .check { color: #16a34a; font-weight: 700; }
+  .pend  { color: #d97706; font-weight: 700; }
+
+  ul { padding-left: 1.2rem; margin-bottom: 0.5rem; }
+  li { margin-bottom: 0.2rem; }
+
+  .section-divider { border: none; border-top: 2px solid #e5e7eb; margin: 2rem 0 1rem; }
+
+  .voice-flow {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    font-family: "Cascadia Code", "Fira Mono", Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+  }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  
+  <h1>VISION Platform — Implementation Report</h1>
+  <p style="font-size:0.9rem;color:#57606a;margin-top:0.2rem">
+    Behaviour-Aware Adaptive Teaching Strategy Selection for Multilingual<br />
+    Personalized Learning of Visually Impaired Students
+  </p>
+
+  <div class="meta-row" style="margin-top:0.9rem">
+    <div class="meta-item"><strong>Project ID:</strong> 4SF24CI033</div>
+    <div class="meta-item"><strong>Year:</strong> Third-Year AIML Engineering</div>
+    <div class="meta-item"><strong>Member 1:</strong> Frontend &amp; Voice Accessibility</div>
+    <div class="meta-item"><strong>Member 2:</strong> Diagnostic Assessment &amp; Learner Modelling</div>
+    <div class="meta-item"><strong>GitHub:</strong> github.com/Athmi-S/Vision_vertex_miniProject</div>
+  </div>
+
+  
+  <h2>Technology Stack</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Version / Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React + TypeScript + Vite</td><td>React 19, Vite 6, React Router v7</td></tr>
+      <tr><td>Backend</td><td>Python + FastAPI</td><td>FastAPI 0.115, Uvicorn 0.34</td></tr>
+      <tr><td>Database</td><td>SQLite + SQLAlchemy</td><td>SQLAlchemy 2.0, file: <code>vision.db</code></td></tr>
+      <tr><td>Auth</td><td>JWT + HttpOnly Cookie</td><td>python-jose, SameSite=Lax</td></tr>
+      <tr><td>Password</td><td>passlib + bcrypt</td><td>passlib 1.7.4, bcrypt 4.2.1 (pinned)</td></tr>
+      <tr><td>TTS</td><td>Web Speech API</td><td><code>window.speechSynthesis</code> — Chrome/Edge</td></tr>
+      <tr><td>STT</td><td>Web Speech Recognition</td><td><code>webkitSpeechRecognition</code> — Chrome/Edge</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Commands to Run</h2>
+
+  <h3>Backend</h3>
+  <pre><span class="comment"># From: adaptive-learning-app/backend/</span>
+<span class="cmd">.\venv\Scripts\python.exe -m uvicorn main:app --reload</span>
+<span class="comment"># Server runs at:</span> <span class="url">http://localhost:8000</span>
+<span class="comment"># API docs at:    </span> <span class="url">http://localhost:8000/docs</span>
+<span class="comment"># Health check:   </span> <span class="url">http://localhost:8000/health</span></pre>
+
+  <h3>Frontend</h3>
+  <pre><span class="comment"># From: adaptive-learning-app/frontend/</span>
+<span class="cmd">npm run dev</span>
+<span class="comment"># App runs at:</span> <span class="url">http://localhost:5173</span></pre>
+
+  <h3>Run Tests</h3>
+  <pre><span class="comment"># From: adaptive-learning-app/backend/</span>
+<span class="cmd">.\venv\Scripts\python.exe -m pytest tests/ -v</span>
+<span class="comment"># Expected: 72 passed</span></pre>
+
+  <h3>Build Frontend</h3>
+  <pre><span class="comment"># From: adaptive-learning-app/frontend/</span>
+<span class="cmd">npm run build</span>
+<span class="comment"># Expected: 0 errors, 45 modules transformed</span></pre>
+
+  <hr class="section-divider" />
+
+  
+  <h2>Project Structure</h2>
+  <pre><span class="comment">adaptive-learning-app/</span>
+├── README.md
+├── frontend/
+│   └── src/
+│       ├── App.tsx                   <span class="comment"># 7 routes</span>
+│       ├── hooks/
+│       │   ├── useAuth.ts            <span class="comment"># login / logout / session</span>
+│       │   ├── useProfile.ts         <span class="comment"># GET/PUT /profile</span>
+│       │   ├── useAssessment.ts      <span class="comment"># 8-phase assessment state machine</span>
+│       │   ├── useTTS.ts             <span class="comment"># Web Speech TTS + speakThen()</span>
+│       │   └── useSTT.ts             <span class="comment"># Web Speech Recognition + matching</span>
+│       ├── components/
+│       │   └── TTSToolbar.tsx        <span class="comment"># TTS + mic control bar</span>
+│       └── pages/
+│           ├── WelcomePage.tsx
+│           ├── LoginPage.tsx
+│           ├── RegisterPage.tsx
+│           ├── LearnerDashboard.tsx
+│           ├── ModeSelectorPage.tsx
+│           ├── DiagnosticPage.tsx    <span class="comment"># full voice-driven assessment</span>
+│           └── ResultsPage.tsx
+└── backend/
+    ├── main.py
+    ├── seed_data.py                  <span class="comment"># 36 questions, idempotent</span>
+    ├── app/
+    │   ├── models.py                 <span class="comment"># 9 SQLAlchemy models</span>
+    │   ├── dependencies.py           <span class="comment"># get_current_learner()</span>
+    │   ├── routers/
+    │   │   ├── health.py
+    │   │   ├── auth.py
+    │   │   ├── assessment.py
+    │   │   └── profile.py
+    │   ├── schemas/
+    │   │   ├── auth.py
+    │   │   ├── assessment.py
+    │   │   └── profile.py
+    │   └── services/
+    │       ├── auth_service.py
+    │       └── assessment_service.py
+    └── tests/
+        ├── test_auth.py              <span class="comment"># 23 tests</span>
+        ├── test_assessment.py        <span class="comment"># 24 tests</span>
+        └── test_profile.py           <span class="comment"># 25 tests</span></pre>
+
+  <hr class="section-divider" />
+
+  
+  <h2>Backend API Endpoints</h2>
+  <table>
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td><code>/health</code></td><td>Health check</td><td>—</td></tr>
+      <tr><td><code>POST</code></td><td><code>/auth/register</code></td><td>Register new learner</td><td>—</td></tr>
+      <tr><td><code>POST</code></td><td><code>/auth/login</code></td><td>Login, sets HttpOnly cookie</td><td>—</td></tr>
+      <tr><td><code>POST</code></td><td><code>/auth/logout</code></td><td>Clear session cookie</td><td>Cookie</td></tr>
+      <tr><td><code>GET</code></td><td><code>/auth/me</code></td><td>Get current user</td><td>Cookie</td></tr>
+      <tr><td><code>GET</code></td><td><code>/profile</code></td><td>Get learner profile</td><td>Cookie</td></tr>
+      <tr><td><code>PUT</code></td><td><code>/profile</code></td><td>Update mode + language</td><td>Cookie</td></tr>
+      <tr><td><code>GET</code></td><td><code>/assessment/subjects</code></td><td>List subjects &amp; topics</td><td>Cookie</td></tr>
+      <tr><td><code>POST</code></td><td><code>/assessment/start</code></td><td>Begin session, get question IDs</td><td>Cookie</td></tr>
+      <tr><td><code>GET</code></td><td><code>/assessment/question/{id}</code></td><td>Fetch question (no answer)</td><td>Cookie</td></tr>
+      <tr><td><code>POST</code></td><td><code>/assessment/answer</code></td><td>Submit answer, get result</td><td>Cookie</td></tr>
+      <tr><td><code>GET</code></td><td><code>/assessment/result/{session_id}</code></td><td>Session summary + mastery</td><td>Cookie</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Database Schema — 9 Tables</h2>
+  <table>
+    <thead><tr><th>Table</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td>Learner and admin accounts (hashed passwords)</td></tr>
+      <tr><td><code>learner_profiles</code></td><td>Per-learner mode + language preference</td></tr>
+      <tr><td><code>subjects</code></td><td>Top-level subjects (Mathematics, General Knowledge)</td></tr>
+      <tr><td><code>topics</code></td><td>Sub-topics within a subject (Algebra, Geometry…)</td></tr>
+      <tr><td><code>questions</code></td><td>MCQ questions with difficulty and topic</td></tr>
+      <tr><td><code>question_options</code></td><td>4 answer options per question</td></tr>
+      <tr><td><code>question_i18n</code></td><td>Multilingual text + explanation per question</td></tr>
+      <tr><td><code>assessment_attempts</code></td><td>Every answer recorded with session_id</td></tr>
+      <tr><td><code>concept_mastery</code></td><td>Per-learner per-topic mastery score (0.0–1.0)</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Seed Data</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>Subjects</td><td>2 (Mathematics, General Knowledge)</td></tr>
+      <tr><td>Topics</td><td>6 (Arithmetic, Algebra, Geometry, Science &amp; Technology, History &amp; Civics, Logical Reasoning)</td></tr>
+      <tr><td>Questions</td><td>36 (6 per topic × 3 difficulties: easy / medium / hard)</td></tr>
+      <tr><td>Answer Options</td><td>144 (4 per question)</td></tr>
+      <tr><td>English Translations</td><td>36 (question_i18n, lang = "en")</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider" />
+
+  
+  <h2>Voice Accessibility Flow</h2>
+  <div class="voice-flow">QUESTION PHASE
+  TTS reads: "Question 1 of 6. [question text].
+             Option 1: [text]. Option 2: [text]...
+             Say your answer now."
+        ↓  (TTS finishes)
+  🎤  Mic opens automatically
+  User says: "two" / "option 2" / "second"
+        ↓
+  TTS says: "Selecting Option 2: [text]. Submitting."
+        ↓  (answer submitted to backend)
+
+FEEDBACK PHASE
+  TTS says: "Correct! Explanation: [text].
+             Shall we move to the next question?
+             Say yes to continue, or no to stay."
+        ↓  (TTS finishes)
+  🎤  Mic opens automatically
+  User says: "yes"
+        ↓
+  TTS says: "Moving to the next question."
+        ↓
+  Next question loads → cycle repeats
+
+LAST QUESTION
+  TTS asks: "Shall we finish the assessment?
+             Say yes to view results."
+  User says: "yes" → Results page loads</div>
+
+  
+  <h2>Recognised Voice Commands</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>You say</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Question</td><td>"one" / "option 1" / "first" / "a"</td><td>Selects Option 1</td></tr>
+      <tr><td>Question</td><td>"two" / "option 2" / "second" / "b"</td><td>Selects Option 2</td></tr>
+      <tr><td>Question</td><td>"three" / "option 3" / "third" / "c"</td><td>Selects Option 3</td></tr>
+      <tr><td>Question</td><td>"four" / "option 4" / "fourth" / "d"</td><td>Selects Option 4</td></tr>
+      <tr><td>Feedback</td><td>"yes" / "yeah" / "sure" / "next" / "go" / "continue"</td><td>Next question</td></tr>
+      <tr><td>Feedback</td><td>"no" / "wait" / "stay" / "again"</td><td>Stay on feedback</td></tr>
+      <tr><td>Last question</td><td>"yes" / "finish" / "done"</td><td>View results</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Test Coverage</h2>
+  <table>
+    <thead><tr><th>File</th><th>Tests</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/test_auth.py</code></td><td>23</td><td><span class="check">✅ PASSED</span></td></tr>
+      <tr><td><code>tests/test_assessment.py</code></td><td>24</td><td><span class="check">✅ PASSED</span></td></tr>
+      <tr><td><code>tests/test_profile.py</code></td><td>25</td><td><span class="check">✅ PASSED</span></td></tr>
+      <tr><td><strong>Total</strong></td><td><strong>72</strong></td><td><span class="check">✅ 72/72 PASSED</span></td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Completed Stages</h2>
+  <table>
+    <thead><tr><th>Stage</th><th>Description</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Stage 1</td><td>Project scaffolding — Vite + FastAPI + SQLite setup</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 2</td><td>Auth system — register, login, logout, JWT cookie, session restore</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 3</td><td>9-table database schema + seed data (36 questions)</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 4</td><td>Learner profile — mode selector (academic/competitive/topic) + language preference</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 5</td><td>Full diagnostic assessment — question flow, answer scoring, mastery update, session results</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 5A</td><td>TTS — auto-reads every question and feedback aloud</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 5B</td><td>STT — voice answer input, option matching (digits + words + letters)</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 5C</td><td>Auto-start mic after TTS finishes — no button click needed</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 5D</td><td>Voice navigation — "yes/no" after feedback to advance or stay</td><td><span class="check">✅ Done</span></td></tr>
+      <tr><td>Stage 6</td><td>Multilingual support (question_i18n schema ready, Hindi/Kannada/Tamil pending seed)</td><td><span class="pend">⏳ Pending</span></td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>Key Technical Notes</h2>
+  <div class="card">
+    <div class="card-title">Security</div>
+    <ul>
+      <li>Passwords stored as bcrypt hashes — never plaintext</li>
+      <li>JWT in HttpOnly cookie — not accessible to JavaScript</li>
+      <li><code>learner_id</code> always taken from authenticated cookie — never from request body</li>
+      <li><code>is_correct</code> on options never returned before the learner submits</li>
+      <li>Secrets stored in <code>.env</code> file — gitignored</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title">Accessibility</div>
+    <ul>
+      <li>Semantic HTML — landmarks, headings, skip links on every page</li>
+      <li>All interactive elements keyboard-navigable (Tab / Enter / Space)</li>
+      <li><code>role="alert"</code> on errors, <code>aria-live</code> on status messages</li>
+      <li>TTS auto-reads questions + feedback — no manual button press needed</li>
+      <li>STT mic auto-opens after TTS finishes — fully hands-free assessment</li>
+      <li>Screen-reader compatible labels on all buttons and form fields</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title">Known Constraints</div>
+    <ul>
+      <li>STT works in Chrome and Edge only (Web Speech API limitation)</li>
+      <li>bcrypt must stay pinned to <code>==4.2.1</code> — bcrypt 5.x incompatible with passlib 1.7.4</li>
+      <li>All question text is plain ASCII — Windows cp1252 terminal constraint</li>
+      <li>Run backend with <code>.\venv\Scripts\python.exe -m uvicorn</code> not plain <code>uvicorn</code></li>
+    </ul>
+  </div>
+
+  
+  <h2>Remaining Work</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Owner</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Stage 6 — Hindi/Kannada/Tamil seed translations</td><td>Member 2</td><td>Schema already in DB; seed script needed</td></tr>
+      <tr><td>Adaptive strategy engine</td><td>Member 3</td><td>Baseline mastery formula in place as placeholder</td></tr>
+      <tr><td>Full integration</td><td>Member 4</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    VISION Learning Platform  |  4SF24CI033  |  Made with IBM Bob
+  </footer>
+
+</div>
+</body>
+</html>
