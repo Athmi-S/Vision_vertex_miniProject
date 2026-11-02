@@ -19,6 +19,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_learner
+from pydantic import BaseModel
+from app.services.strategy_service import BehaviourSignals, select_strategy
 from app.models import AssessmentAttempt, Question, QuestionOption, Subject, Topic, User
 from app.schemas.assessment import (
     OptionOut,
@@ -287,4 +289,65 @@ def get_session_result(
             f"Session complete. You answered {stats['answered']} of {stats['total']} "
             f"question(s) and scored {stats['score_percent']}%."
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /assessment/strategy/{session_id}/{question_id}
+# Recommend a teaching strategy from the learner's behaviour on a question.
+# ---------------------------------------------------------------------------
+class StrategyResponse(BaseModel):
+    session_id: str
+    question_id: int
+    strategy: str
+    reason: str
+    response_time_ms: int | None
+    help_requested: bool
+    attempts_count: int
+
+
+@router.get(
+    "/strategy/{session_id}/{question_id}",
+    response_model=StrategyResponse,
+    summary="Recommend a teaching strategy from the learner's behaviour",
+)
+def get_strategy(
+    session_id: str,
+    question_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_learner),
+):
+    attempt = (
+        db.query(AssessmentAttempt)
+        .filter_by(
+            learner_id=current_user.id,
+            session_id=session_id,
+            question_id=question_id,
+        )
+        .first()
+    )
+    if attempt is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No attempt found for this session and question.",
+        )
+
+    choice = select_strategy(
+        BehaviourSignals(
+            is_correct=bool(attempt.is_correct),
+            response_time_ms=attempt.response_time_ms,
+            help_requested=attempt.help_requested,
+            attempts_count=attempt.attempts_count,
+            skipped=attempt.skipped,
+        )
+    )
+
+    return StrategyResponse(
+        session_id=session_id,
+        question_id=question_id,
+        strategy=choice.strategy,
+        reason=choice.reason,
+        response_time_ms=attempt.response_time_ms,
+        help_requested=attempt.help_requested,
+        attempts_count=attempt.attempts_count,
     )
