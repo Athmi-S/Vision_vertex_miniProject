@@ -18,7 +18,7 @@
 
 import { useState, useCallback } from "react";
 
-const API = "http://localhost:8000";
+import { API_BASE_URL as API } from "../config";
 
 // ---------------------------------------------------------------------------
 // Types that match the backend schemas exactly

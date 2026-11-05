@@ -11,7 +11,7 @@
 
 import { useState, useCallback } from "react";
 
-const API = "http://localhost:8000";
+import { API_BASE_URL as API } from "../config";
 
 export interface LearnerProfile {
   user_id: number;

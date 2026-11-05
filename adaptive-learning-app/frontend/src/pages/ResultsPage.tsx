@@ -21,7 +21,7 @@ import { useAuth } from "../hooks/useAuth";
 import type { SessionResult, TopicMastery } from "../hooks/useAssessment";
 import "./ResultsPage.css";
 
-const API = "http://localhost:8000";
+import { API_BASE_URL as API } from "../config";
 
 // ---------------------------------------------------------------------------
 // Sub-components

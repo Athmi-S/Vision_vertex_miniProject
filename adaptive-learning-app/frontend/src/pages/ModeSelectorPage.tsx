@@ -22,6 +22,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
 import type { LearnerProfile } from "../hooks/useProfile";
+import { API_BASE_URL } from "../config";
 import "./ModeSelectorPage.css";
 
 // ---------------------------------------------------------------------------
@@ -279,7 +280,7 @@ function ModeSelectorPage() {
   // Logout helper (defined inside component to access navigate)
   // -------------------------------------------------------------------------
   async function handleLogout() {
-    await fetch("http://localhost:8000/auth/logout", {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

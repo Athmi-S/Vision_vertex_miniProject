@@ -240,9 +240,8 @@ export default function LoginPage() {
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
-  const guard = useCallback((fn: () => void): (() => void) => {
-    return () => { if (activeRef.current) fn(); };
-  }, []);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const guard = useCallback(<T extends any[]>(fn: (...args: T) => void) => (...args: T) => { if (activeRef.current) fn(...args); }, []);
 
   function speak(text: string, then: () => void) {
     cancelSTTRef.current?.();

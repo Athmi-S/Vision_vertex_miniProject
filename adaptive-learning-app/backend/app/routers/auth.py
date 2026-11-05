@@ -1,11 +1,12 @@
 """
 app/routers/auth.py — Authentication endpoints.
 
-POST /auth/register   — create a new learner account
-POST /auth/login      — verify credentials, set HttpOnly JWT cookie
-POST /auth/logout     — clear the JWT cookie
-POST /auth/recover    — request a password-reset OTP (dev: logged to console)
-GET  /auth/me         — return the currently authenticated user's profile
+ POST /auth/register    — create a new learner account
+POST /auth/login       — verify credentials, set HttpOnly JWT cookie
+POST /auth/demo-login  — authenticate the dedicated demo account (no credentials required)
+POST /auth/logout      — clear the JWT cookie
+POST /auth/recover     — request a password-reset OTP (dev: logged to console)
+GET  /auth/me          — return the currently authenticated user's profile
 """
 
 import os
@@ -39,6 +40,12 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 # In development (HTTP) we do NOT set Secure — browsers reject Secure cookies
 # on plain HTTP. In production (HTTPS) Secure must be True.
 _IS_PROD: bool = os.getenv("APP_ENV", "development") == "production"
+
+# Demo account credentials — read from environment, never hardcoded.
+# The /auth/demo-login endpoint matches against these values only; no
+# credentials are ever sent to or stored in the frontend.
+_DEMO_EMAIL: str = os.getenv("DEMO_EMAIL", "demo@vision-learning.app")
+_DEMO_PASSWORD: str = os.getenv("DEMO_PASSWORD", "DemoAccess2025!")
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +160,74 @@ def login(
 
     return LoginResponse(
         message="Login successful.",
+        username=user.username,
+        role=user.role,
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /auth/demo-login
+# ---------------------------------------------------------------------------
+@router.post(
+    "/demo-login",
+    response_model=LoginResponse,
+    summary="Authenticate the dedicated demo account without requiring credentials",
+)
+def demo_login(
+    response: Response,
+    db: Session = Depends(get_db),
+) -> LoginResponse:
+    """
+    Authenticate the pre-provisioned demo learner account.
+
+    Security properties:
+    - No credentials are accepted from the caller.  The backend looks up the
+      demo account using DEMO_EMAIL and DEMO_PASSWORD from the server-side
+      environment — these values are NEVER sent to or readable by the frontend.
+    - The demo account must exist and be active.  Run provision_demo.py first.
+    - Sets the same HttpOnly JWT cookie as the regular /auth/login endpoint.
+    - Returns 503 if the demo account has not been provisioned yet.
+    - Returns 403 if the demo account exists but is deactivated.
+
+    The demo account has role='learner' and sees no real users' data.
+    """
+    user = db.query(User).filter(User.email == _DEMO_EMAIL).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "The demo account has not been provisioned yet. "
+                "Run 'python provision_demo.py' in the backend directory."
+            ),
+        )
+
+    if not verify_password(_DEMO_PASSWORD, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Demo account credentials are misconfigured. Please re-run provision_demo.py.",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The demo account has been deactivated.",
+        )
+
+    token = create_access_token({"sub": str(user.id), "role": user.role})
+
+    response.set_cookie(
+        key="vision_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=_IS_PROD,
+        max_age=60 * int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")),
+        path="/",
+    )
+
+    return LoginResponse(
+        message="Demo login successful.",
         username=user.username,
         role=user.role,
     )

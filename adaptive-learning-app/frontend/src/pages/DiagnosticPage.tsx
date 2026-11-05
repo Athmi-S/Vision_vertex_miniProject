@@ -32,6 +32,7 @@ import type { SubjectOut } from "../hooks/useAssessment";
 import { useTTS } from "../hooks/useTTS";
 import { useSTT, matchOptionFromTranscript } from "../hooks/useSTT";
 import TTSToolbar from "../components/TTSToolbar";
+import { API_BASE_URL } from "../config";
 import "./DiagnosticPage.css";
 
 // ---------------------------------------------------------------------------
@@ -495,7 +496,7 @@ function DiagnosticPage() {
   }
 
   async function handleLogout() {
-    await fetch("http://localhost:8000/auth/logout", {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

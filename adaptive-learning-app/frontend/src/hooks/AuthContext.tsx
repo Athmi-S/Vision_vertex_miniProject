@@ -19,7 +19,7 @@ import {
   type ReactNode,
 } from "react";
 
-const API = "http://localhost:8000";
+import { API_BASE_URL as API } from "../config";
 
 export interface AuthUser {
   id: number;
@@ -32,6 +32,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Authenticate as the pre-provisioned demo account — no credentials needed. */
+  demoLogin: () => Promise<void>;
   logout: () => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
 }
@@ -70,6 +72,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me.ok ? await me.json() : null);
   }, []);
 
+  /**
+   * demoLogin — calls POST /auth/demo-login (no body needed).
+   * The backend authenticates the demo account using server-side env vars.
+   * No credentials are ever passed from the frontend.
+   */
+  const demoLogin = useCallback(async () => {
+    const r = await fetch(`${API}/auth/demo-login`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.detail ?? "Demo login failed.");
+    }
+    const me = await fetch(`${API}/auth/me`, { credentials: "include" });
+    setUser(me.ok ? await me.json() : null);
+  }, []);
+
   const logout = useCallback(async () => {
     await fetch(`${API}/auth/logout`, {
       method: "POST",
@@ -99,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, loading, login, demoLogin, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
